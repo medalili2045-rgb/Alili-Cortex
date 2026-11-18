@@ -15,7 +15,7 @@ server:
   port: 10000
   bind_address: "0.0.0.0"
   base_url: false
+  secret_key: "CHANGE_THIS_SECRET_IN_RENDER"
   limiter: false
   public_instance: false
-  secret_key: "REPLACE_WITH_A_LONG_RANDOM_SECRET"
   image_proxy: false
