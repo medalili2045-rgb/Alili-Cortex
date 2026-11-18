@@ -12,10 +12,10 @@ search:
     - json
 
 server:
-  port: 10000
-  bind_address: "0.0.0.0"
+  port: 8080
+  bind_address: "127.0.0.1"
   base_url: false
-  secret_key: "CHANGE_THIS_SECRET_IN_RENDER"
+  secret_key: "$SEARXNG_SECRET"
   limiter: false
   public_instance: false
   image_proxy: false
