@@ -1,0 +1,19 @@
+name = "ac-cortex-python-engine-preview"
+main = "cloudflare_worker/entry.py"
+compatibility_date = "2026-11-21"
+compatibility_flags = ["python_workers"]
+
+[vars]
+ALILI_WORKERS_AI_MODEL = "@cf/zai-org/glm-4.7-flash"
+# Deliberately false until the Cloudflare account's plan and eligibility are verified.
+ALILI_FREE_PLAN_CONFIRMED = "false"
+
+[[ai]]
+binding = "AI"
+
+[[d1_databases]]
+binding = "AC_STATE"
+database_name = "alili-cortex-worker-state"
+database_id = "a5e946a9-ef89-4336-a589-6407820eb13d"
+migrations_dir = "migrations"
+
