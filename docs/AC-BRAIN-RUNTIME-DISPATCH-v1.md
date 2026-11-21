@@ -23,7 +23,7 @@ Until the model probe reports ready, dispatch returns blocked and makes no infer
 
 ## API/service integration status
 
-This module is the isolated runtime primitive. Wiring authenticated API routes, persistent dispatch records, and the UI is a separate integration step. The module does not activate any logical brain manifest or change provider eligibility.
+The runtime is wired into EngineService and exposed through authenticated GET /v1/brains/runtime and POST /v1/brains/dispatch routes. Dispatch is synchronous and bounded; the dispatch response is not persisted as a job record in this version. The module does not activate any logical brain manifest or change provider eligibility.
 
 ## Verification
 
