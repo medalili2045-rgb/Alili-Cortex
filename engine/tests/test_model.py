@@ -14,6 +14,14 @@ from alili_engine.store import TaskStore
 
 
 class _Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = json.dumps({"object": "list", "data": self.server.advertised_models}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
         self.server.request_body = json.loads(self.rfile.read(length))
@@ -36,6 +44,7 @@ class LocalModelTests(unittest.TestCase):
     def setUp(self):
         self.server = HTTPServer(("127.0.0.1", 0), _Handler)
         self.server.request_body = None
+        self.server.advertised_models = [{"id": "tiny-local-test", "object": "model"}]
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.client = LocalModelClient(f"http://127.0.0.1:{self.server.server_port}/v1", "tiny-local-test", timeout=2)
@@ -105,6 +114,29 @@ class LocalModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.client.generate([{"role": "tool", "content": "not allowed"}])
 
+    def test_status_probe_reports_ready_only_when_configured_model_is_advertised(self):
+        status = self.client.status()
+        self.assertEqual(status["status"], "ready")
+        self.assertTrue(status["model_available"])
+        self.assertNotIn("endpoint", status)
+
+    def test_status_probe_reports_empty_or_missing_model_without_claiming_ready(self):
+        self.server.advertised_models = []
+        empty = self.client.status()
+        self.assertEqual(empty["status"], "reachable_no_models")
+        self.assertEqual(empty["reason"], "no_models_advertised")
+        self.server.advertised_models = [{"id": "different-model"}]
+        missing = self.client.status()
+        self.assertEqual(missing["status"], "reachable_no_models")
+        self.assertFalse(missing["model_available"])
+
+    def test_status_probe_reports_unreachable_without_leaking_endpoint(self):
+        self.server.shutdown()
+        status = self.client.status()
+        self.assertEqual(status["status"], "unreachable")
+        self.assertNotIn("endpoint", status)
+        self.assertNotIn(str(self.server.server_port), json.dumps(status))
+
     def test_never_uses_hosted_fallback(self):
         self.assertEqual(self.client.status()["fallback"], "disabled")
 
@@ -146,11 +178,13 @@ class EngineGenerateApiTests(unittest.TestCase):
         self.assertEqual(payload["result"]["content"], "مرحباً من النموذج المحلي")
         self.assertEqual(self.model_server.request_body["model"], "tiny-local-test")
 
-    def test_model_status_does_not_claim_runtime_health(self):
+    def test_model_status_reports_live_local_runtime_readiness(self):
         request = Request(self.base + "/v1/model/status", headers={"Authorization": "Bearer " + self.token})
         with urlopen(request) as response:
             payload = json.loads(response.read())
-        self.assertEqual(payload["model"]["status"], "configured_not_runtime_checked")
+        self.assertEqual(payload["model"]["status"], "ready")
+        self.assertTrue(payload["model"]["model_available"])
+        self.assertNotIn("endpoint", payload["model"])
         self.assertEqual(payload["model"]["fallback"], "disabled")
 
 

@@ -49,8 +49,42 @@ class LocalModelClient:
         self.timeout = timeout
 
     def status(self) -> dict:
-        return {"configured": True, "kind": "local_loopback", "model": self.model_name,
-                "endpoint": self.base_url, "fallback": "disabled"}
+        """Probe only the explicitly configured loopback server's OpenAI /models endpoint."""
+        result = {"configured": True, "kind": "local_loopback", "model": self.model_name,
+                  "fallback": "disabled", "probe": "GET /models"}
+        request = Request(self.base_url + "/models",
+                          headers={"Accept": "application/json"}, method="GET")
+        try:
+            with build_opener(_NoRedirectHandler()).open(request, timeout=min(self.timeout, 3.0)) as response:
+                raw = response.read(512_001)
+                if len(raw) > 512_000:
+                    return {**result, "status": "reachable_no_models",
+                            "reason": "models_response_too_large", "model_count": 0}
+                payload = json.loads(raw.decode("utf-8"))
+        except HTTPError as exc:
+            return {**result, "status": "unreachable",
+                    "reason": "models_endpoint_http_error", "http_status": exc.code}
+        except (URLError, TimeoutError, OSError):
+            return {**result, "status": "unreachable", "reason": "runtime_unreachable"}
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return {**result, "status": "reachable_no_models",
+                    "reason": "invalid_models_response", "model_count": 0}
+
+        entries = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(entries, list):
+            return {**result, "status": "reachable_no_models",
+                    "reason": "invalid_models_response", "model_count": 0}
+        model_ids = [item.get("id") for item in entries
+                     if isinstance(item, dict) and isinstance(item.get("id"), str)]
+        if not model_ids:
+            return {**result, "status": "reachable_no_models",
+                    "reason": "no_models_advertised", "model_count": 0}
+        if self.model_name not in model_ids:
+            return {**result, "status": "reachable_no_models",
+                    "reason": "configured_model_not_advertised",
+                    "model_count": len(model_ids), "model_available": False}
+        return {**result, "status": "ready", "reason": "configured_model_available",
+                "model_count": len(model_ids), "model_available": True}
 
     def generate(self, messages: list[dict], *, temperature: float = 0.2, max_tokens: int = 512) -> dict:
         if not isinstance(messages, list) or not messages or len(messages) > 40:

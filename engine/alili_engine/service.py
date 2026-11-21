@@ -243,9 +243,9 @@ class EngineService:
 
     def model_status(self) -> dict:
         if self.model_client is None:
-            return {"configured": False, "kind": "local_loopback", "status": "unavailable",
+            return {"configured": False, "kind": "local_loopback", "status": "unconfigured",
                     "fallback": "disabled", "reason": "local_model_not_configured"}
-        return {**self.model_client.status(), "status": "configured_not_runtime_checked"}
+        return self.model_client.status()
 
     def generate(self, messages: list[dict], *, temperature: float = 0.2, max_tokens: int = 512) -> dict:
         if self.model_client is None:
