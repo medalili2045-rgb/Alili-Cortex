@@ -143,6 +143,29 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(plan["isolation"]["separate_assignment_contexts"])
         self.assertFalse(plan["isolation"]["shared_mutable_context"])
 
+    def test_evolution_api_proposals_require_review_before_activation(self):
+        headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
+        with urlopen(Request(self.base + "/v1/evolution/status", headers=headers)) as response:
+            status = json.loads(response.read())
+        self.assertTrue(status["evolution"]["requires_human_review"])
+        payload = {"proposal_type": "knowledge_library", "item_id": "ac_api_test_library",
+                   "name": "API Test Library", "domain": "biology",
+                   "rationale": "Test an evidence-backed growth proposal.",
+                   "evidence_refs": ["https://example.org/evidence"]}
+        request = Request(self.base + "/v1/evolution/proposals", data=json.dumps(payload).encode(),
+                          headers=headers, method="POST")
+        with urlopen(request) as response:
+            created = json.loads(response.read())["proposal"]
+        self.assertEqual(created["status"], "pending_review")
+        review_payload = {"decision": "approve", "reviewer": "test-reviewer", "notes": "Reviewed"}
+        review_request = Request(self.base + "/v1/evolution/proposals/" + created["proposal_id"] + "/review",
+                                 data=json.dumps(review_payload).encode(), headers=headers, method="POST")
+        with urlopen(review_request) as response:
+            reviewed = json.loads(response.read())["proposal"]
+        self.assertEqual(reviewed["status"], "approved")
+        self.assertFalse(status["evolution"]["automatic_creation"])
+        self.assertFalse(status["evolution"]["automatic_brain_activation"])
+
     def test_knowledge_scout_api_is_authenticated_and_quarantine_first(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
         with urlopen(Request(self.base + "/v1/knowledge-scout/status", headers=headers)) as response:
