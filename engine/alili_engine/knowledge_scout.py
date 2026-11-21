@@ -240,13 +240,16 @@ class KnowledgeScout:
                       "retrieved_at": retrieved_at or _now(),
                       "license_evidence_url": license_evidence_url,
                       "content_sha256": digest, "content_kind": "short_note_or_summary"}
-        with self._connect() as db:
-            db.execute("""INSERT INTO ac_scout_proposals
-                (proposal_id,source_id,title,note,content_sha256,provenance_json,
-                 domain,brain_id,status,created_at)
-                VALUES (?,?,?,?,?,?,?,?, 'quarantined',?)""",
-                (proposal_id, source_id, title.strip(), normalized, digest,
-                 json.dumps(provenance, ensure_ascii=False), domain, brain_id, _now()))
+        try:
+            with self._connect() as db:
+                db.execute("""INSERT INTO ac_scout_proposals
+                    (proposal_id,source_id,title,note,content_sha256,provenance_json,
+                     domain,brain_id,status,created_at)
+                    VALUES (?,?,?,?,?,?,?,?, 'quarantined',?)""",
+                    (proposal_id, source_id, title.strip(), normalized, digest,
+                     json.dumps(provenance, ensure_ascii=False), domain, brain_id, _now()))
+        except sqlite3.IntegrityError as exc:
+            raise ValueError("duplicate_knowledge_note") from exc
         return self.get_proposal(proposal_id)
 
     def get_proposal(self, proposal_id: str) -> dict | None:
