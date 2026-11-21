@@ -1,7 +1,11 @@
+import os
+import tempfile
 import unittest
 
 from alili_engine.brains import BrainRegistry
 from alili_engine.brain_runtime import ACBrianRuntime, BrainDispatchError
+from alili_engine.service import EngineService
+from alili_engine.store import TaskStore
 
 
 class FakeLocalModel:
@@ -74,6 +78,18 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(result["status"], "partial_failure")
         self.assertFalse(result["finalized"])
         self.assertEqual(result["quality_review"]["status"], "not_run")
+
+    def test_engine_service_wires_local_dispatch_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = FakeLocalModel()
+            service = EngineService(
+                TaskStore(os.path.join(directory, "runtime.sqlite3")),
+                model_client=model,
+            )
+            plan = service.plan_brains("Design and test a software API")
+            result = service.dispatch_brains(plan)
+        self.assertEqual(result["status"], "completed")
+        self.assertTrue(result["finalized"])
 
     def test_duplicate_assignments_are_rejected(self):
         runtime = ACBrianRuntime(FakeLocalModel(), BrainRegistry())
