@@ -23,6 +23,7 @@ from .training_runtime import training_preflight
 from .observatory import AICapabilityObservatory
 from .execution_sandbox import ACExecutionSandbox
 from .library_foundry import LibraryFoundry
+from .license_intelligence import LicenseIntelligence
 
 
 class EngineService:
@@ -49,6 +50,7 @@ class EngineService:
         self.ai_observatory = AICapabilityObservatory(store.database_path)
         self.execution = execution_sandbox or ACExecutionSandbox()
         self.libraries = library_foundry or LibraryFoundry(store.database_path)
+        self.license_intelligence = LicenseIntelligence()
 
     def capabilities(self) -> dict:
         return {"policy": "free_first_no_paid_fallback", "capabilities": self.registry.all()}
@@ -100,8 +102,8 @@ class EngineService:
     def provider_summary(self) -> dict:
         return self.providers.summary()
 
-    def library_summary(self) -> dict:
-        return self.libraries.summary()
+    def license_intelligence_status(self) -> dict:
+        return {\"available\": True, \"version\": \"1.0.0\", \"automatic_approval\": False,\n                \"automatic_installation\": False, \"default_admission_status\": \"quarantined\"}\n\n    def analyze_dependency_licenses(self, dependency_report: dict) -> dict:\n        return self.license_intelligence.analyze(dependency_report)\n\n    def library_summary(self) -> dict:\n        return self.libraries.summary()
 
     def library_catalog(self, **kwargs) -> list[dict]:
         return self.libraries.list(**kwargs)
