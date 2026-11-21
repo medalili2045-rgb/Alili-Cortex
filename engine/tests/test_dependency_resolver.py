@@ -60,6 +60,8 @@ class DependencyResolverTests(unittest.TestCase):
         self.assertTrue(version_satisfies("2.4.0", ">=2,<3"))
         self.assertFalse(version_satisfies("3.0.0", ">=2,<3"))
         self.assertTrue(version_satisfies("1.8.4", "~=1.8"))
+        self.assertFalse(version_satisfies("2.0.0", "~=1.8"))
+        self.assertTrue(version_satisfies("1.2.0", "==1.2"))
         self.assertTrue(version_satisfies("1.2.5", "==1.2.*"))
         self.assertIsNone(version_satisfies("1!2.0", ">=1"))
 
