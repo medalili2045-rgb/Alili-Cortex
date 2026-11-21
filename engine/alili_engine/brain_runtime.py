@@ -58,7 +58,7 @@ class ACBrianRuntime:
                 "specialist_mode": "isolated_role_prompts_on_shared_local_model"}
 
     def dispatch(self, plan: dict, *, temperature: float = 0.2,
-                 max_tokens: int = 512) -> dict:
+                 max_tokens: int = 512, dispatch_id: str | None = None) -> dict:
         self._validate_plan(plan)
         if isinstance(temperature, bool) or not isinstance(temperature, (int, float)) or not 0 <= temperature <= 1:
             raise BrainDispatchError("invalid_temperature")
@@ -66,7 +66,9 @@ class ACBrianRuntime:
             raise BrainDispatchError("invalid_max_tokens")
 
         runtime_status = self.status()
-        dispatch_id = "ac-dispatch-" + uuid4().hex[:20]
+        dispatch_id = dispatch_id or ("ac-dispatch-" + uuid4().hex[:20])
+        if not isinstance(dispatch_id, str) or not dispatch_id.startswith("ac-dispatch-"):
+            raise BrainDispatchError("invalid_dispatch_id")
         if not runtime_status["available"]:
             return {
                 "dispatch_id": dispatch_id, "plan_id": plan.get("plan_id"),
