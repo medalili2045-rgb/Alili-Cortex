@@ -131,6 +131,25 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(200, {"ok": True, "service": "alili-cortex-engine", "version": "0.6.0"})
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
+            if path == "/v1/providers":
+                query = parse_qs(parsed.query)
+                try:
+                    items = service.provider_catalog(
+                        category=query.get("category", [None])[0],
+                        query=query.get("q", [None])[0],
+                        status=query.get("status", [None])[0],
+                        limit=int(query.get("limit", ["100"])[0]))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_provider_query"})
+                return self._send(200, {"ok": True, "summary": service.provider_summary(),
+                                        "policy": "free_only_no_bank_card_no_paid_fallback",
+                                        "providers": items})
+            if path.startswith("/v1/providers/"):
+                provider_id = path.removeprefix("/v1/providers/")
+                if not provider_id or "/" in provider_id:
+                    return self._send(404, {"ok": False, "error": "not_found"})
+                provider = service.provider_detail(provider_id)
+                return self._send(200, {"ok": True, "provider": provider}) if provider else self._send(404, {"ok": False, "error": "provider_not_found"})
             if path == "/v1/capabilities":
                 return self._send(200, {"ok": True, **service.capabilities()})
             if path == "/v1/brains":

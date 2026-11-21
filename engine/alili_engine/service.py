@@ -8,6 +8,7 @@ from .knowledge import KnowledgeStore
 from .model import ModelNotConfigured
 from .models import ModelRegistry
 from .ecosystem import EcosystemRegistry
+from .provider_catalog import ProviderCatalog
 from .study_blueprints import list_blueprints
 from .study import UniversalStudyEngine
 from .connectors import UniversalSourceConnector
@@ -24,7 +25,7 @@ from .observatory import AICapabilityObservatory
 class EngineService:
     def __init__(self, store: TaskStore, registry=None, planner=None, policy=None,
                  model_client=None, brain_registry=None, knowledge_store=None, training_store=None,
-                 model_registry=None, ecosystem_registry=None):
+                 model_registry=None, ecosystem_registry=None, provider_catalog=None):
         self.store = store
         self.registry = registry or CapabilityRegistry()
         self.planner = planner or TaskPlanner()
@@ -36,6 +37,7 @@ class EngineService:
         self.training = training_store or TrainingStore(store.database_path)
         self.models = model_registry or ModelRegistry()
         self.ecosystem = ecosystem_registry or EcosystemRegistry()
+        self.providers = provider_catalog or ProviderCatalog()
         self.study = UniversalStudyEngine(store.database_path, self.ecosystem, self.knowledge)
         self.knowledge.set_source_validator(self._knowledge_source_is_reviewable)
         self.connectors = UniversalSourceConnector(self.ecosystem)
@@ -82,6 +84,15 @@ class EngineService:
 
     def evaluate_response_style(self, text: str) -> dict:
         return self.ai_observatory.evaluate_response(text)
+
+    def provider_catalog(self, *, category=None, query=None, status=None, limit=100) -> list[dict]:
+        return self.providers.list(category=category, query=query, status=status, limit=limit)
+
+    def provider_detail(self, provider_id: str) -> dict | None:
+        return self.providers.get(provider_id)
+
+    def provider_summary(self) -> dict:
+        return self.providers.summary()
 
     def ecosystem_catalog(self, *, domain=None, query=None, limit=100) -> list[dict]:
         return self.ecosystem.list(domain=domain, query=query, limit=limit)

@@ -11,6 +11,7 @@ from alili_engine.api import create_handler
 from alili_engine.planner import TaskPlanner
 from alili_engine.policy import FreePolicyGate
 from alili_engine.registry import CapabilityRegistry
+from alili_engine.provider_catalog import ProviderCatalog
 from alili_engine.service import EngineService
 from alili_engine.store import TaskStore
 
@@ -126,6 +127,15 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(saved["task_id"], task["task_id"])
         self.assertEqual(saved["plan"]["execution_status"], "capability_not_implemented")
 
+
+    def test_provider_catalog_api_is_authenticated_and_reports_no_connections(self):
+        headers = {"Authorization": "Bearer " + self.token}
+        with urlopen(Request(self.base + "/v1/providers", headers=headers)) as response:
+            payload = json.loads(response.read())
+        self.assertTrue(payload["ok"])
+        self.assertGreater(payload["summary"]["total"], 0)
+        self.assertEqual(payload["summary"]["connected"], 0)
+        self.assertTrue(all(not item["enabled_by_default"] for item in payload["providers"]))
 
     def test_ecosystem_catalog_and_domain_filter(self):
         headers = {"Authorization": "Bearer " + self.token}
