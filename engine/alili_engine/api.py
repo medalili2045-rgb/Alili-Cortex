@@ -216,6 +216,17 @@ def create_handler(service: EngineService, expected_token: str):
                     return self._send(400, {"ok": False, "error": "invalid_scout_query"})
             if path == "/v1/capabilities":
                 return self._send(200, {"ok": True, **service.capabilities()})
+            if path == "/v1/evolution/status":
+                return self._send(200, {"ok": True, "evolution": service.evolution_status()})
+            if path == "/v1/evolution/proposals":
+                query = parse_qs(parsed.query)
+                try:
+                    items = service.evolution_proposals(
+                        status=query.get("status", [None])[0],
+                        limit=int(query.get("limit", ["50"])[0]))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(200, {"ok": True, "proposals": items})
             if path == "/v1/brains":
                 return self._send(200, {"ok": True, **service.brains()})
             if path == "/v1/models":
@@ -380,19 +391,45 @@ def create_handler(service: EngineService, expected_token: str):
                        "/v1/connectors/fetch", "/v1/links",
                        "/v1/ai-observatory/studies", "/v1/ai-observatory/evaluate-response",
                        "/v1/knowledge-scout/sources", "/v1/knowledge-scout/jobs",
-                       "/v1/knowledge-scout/proposals", "/v1/knowledge-scout/discover"}
+                       "/v1/knowledge-scout/proposals", "/v1/knowledge-scout/discover",
+                       "/v1/evolution/proposals"}
+            is_evolution_review = path.startswith("/v1/evolution/proposals/") and path.endswith("/review")
             is_scout_source_enable = path.startswith("/v1/knowledge-scout/sources/") and path.endswith("/enable")
             is_library_review = path.startswith("/v1/libraries/") and path.endswith("/review")
             is_knowledge_transition = path.startswith("/v1/knowledge/") and path.endswith("/transition")
             is_training_evaluation = path.startswith("/v1/training/runs/") and path.endswith("/evaluate")
             is_study_evaluation = path.startswith("/v1/study/sessions/") and path.endswith("/evaluate")
             is_study_knowledge_proposal = path.startswith("/v1/study/sessions/") and path.endswith("/propose-knowledge")
-            if path not in allowed and not is_scout_source_enable and not is_library_review and not is_knowledge_transition and not is_training_evaluation and not is_study_evaluation and not is_study_knowledge_proposal:
+            if path not in allowed and not is_scout_source_enable and not is_library_review and not is_knowledge_transition and not is_training_evaluation and not is_study_evaluation and not is_study_knowledge_proposal and not is_evolution_review:
                 return self._send(404, {"ok": False, "error": "not_found"})
             body, error = self._read_json()
             if error:
                 return self._send(error[0], {"ok": False, "error": error[1]})
 
+            if path == "/v1/evolution/proposals":
+                try:
+                    proposal = service.propose_evolution(
+                        proposal_type=body.get("proposal_type"), item_id=body.get("item_id"),
+                        name=body.get("name"), domain=body.get("domain"),
+                        rationale=body.get("rationale"), evidence_refs=body.get("evidence_refs"))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(202, {"ok": True, "proposal": proposal,
+                                        "notice": "pending_review_no_automatic_creation_or_activation"})
+            if is_evolution_review:
+                proposal_id = path.removeprefix("/v1/evolution/proposals/").removesuffix("/review")
+                if not proposal_id or "/" in proposal_id:
+                    return self._send(400, {"ok": False, "error": "invalid_proposal_id"})
+                try:
+                    proposal = service.review_evolution(
+                        proposal_id, decision=body.get("decision"),
+                        reviewer=body.get("reviewer"), notes=body.get("notes", ""))
+                except KeyError:
+                    return self._send(404, {"ok": False, "error": "evolution_proposal_not_found"})
+                except (ValueError, TypeError) as exc:
+                    return self._send(409, {"ok": False, "error": str(exc)})
+                return self._send(200, {"ok": True, "proposal": proposal,
+                                        "notice": "approval_records_review_only_implementation_is_separate"})
             if is_scout_source_enable:
                 source_id = path.removeprefix("/v1/knowledge-scout/sources/").removesuffix("/enable")
                 if not source_id or "/" in source_id:
