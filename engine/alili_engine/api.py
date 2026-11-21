@@ -272,45 +272,6 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(status, {"ok": reservation.get("reservation_created", False),
                                            "reservation": reservation})
 
-            if path == "/v1/libraries":
-                artifact = None
-                encoded_artifact = body.get("artifact_base64")
-                if encoded_artifact is not None:
-                    if not isinstance(encoded_artifact, str) or len(encoded_artifact) > 160_000:
-                        return self._send(400, {"ok": False, "error": "invalid_artifact_base64"})
-                    try:
-                        artifact = base64.b64decode(encoded_artifact, validate=True)
-                    except (ValueError, binascii.Error):
-                        return self._send(400, {"ok": False, "error": "invalid_artifact_base64"})
-                try:
-                    item = service.register_library(
-                        library_id=body.get("library_id"), name=body.get("name"),
-                        version=body.get("version"), ecosystem=body.get("ecosystem"),
-                        source_url=body.get("source_url"), source_commit=body.get("source_commit"),
-                        license_id=body.get("license_id"), artifact=artifact,
-                        domains=body.get("domains", []), brains=body.get("brains", []),
-                        license_approval=body.get("license_approval"))
-                except (ValueError, TypeError) as exc:
-                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_library"})
-                return self._send(202, {"ok": True, "library": item,
-                                        "notice": "quarantined_until_explicit_artifact_scoped_license_review"
-                                        if item["status"] == "quarantined" else "explicit_license_evidence_recorded"})
-            if is_library_review:
-                library_id = path.removeprefix("/v1/libraries/").removesuffix("/review")
-                if not library_id or "/" in library_id:
-                    return self._send(400, {"ok": False, "error": "invalid_library_id"})
-                try:
-                    item = service.review_library(
-                        library_id, decision=body.get("decision"),
-                        reviewer=body.get("reviewer"),
-                        evidence_ref=body.get("evidence_ref"),
-                        artifact_scope=body.get("artifact_scope"),
-                        notes=body.get("notes", ""))
-                except KeyError:
-                    return self._send(404, {"ok": False, "error": "library_not_found"})
-                except (ValueError, TypeError, AttributeError) as exc:
-                    return self._send(409, {"ok": False, "error": str(exc) or "library_review_rejected"})
-                return self._send(200, {"ok": True, "library": item})
             if path == "/v1/ai-observatory/studies":
                 query = parse_qs(parsed.query)
                 try:
@@ -400,6 +361,45 @@ def create_handler(service: EngineService, expected_token: str):
             if error:
                 return self._send(error[0], {"ok": False, "error": error[1]})
 
+            if path == "/v1/libraries":
+                artifact = None
+                encoded_artifact = body.get("artifact_base64")
+                if encoded_artifact is not None:
+                    if not isinstance(encoded_artifact, str) or len(encoded_artifact) > 160_000:
+                        return self._send(400, {"ok": False, "error": "invalid_artifact_base64"})
+                    try:
+                        artifact = base64.b64decode(encoded_artifact, validate=True)
+                    except (ValueError, binascii.Error):
+                        return self._send(400, {"ok": False, "error": "invalid_artifact_base64"})
+                try:
+                    item = service.register_library(
+                        library_id=body.get("library_id"), name=body.get("name"),
+                        version=body.get("version"), ecosystem=body.get("ecosystem"),
+                        source_url=body.get("source_url"), source_commit=body.get("source_commit"),
+                        license_id=body.get("license_id"), artifact=artifact,
+                        domains=body.get("domains", []), brains=body.get("brains", []),
+                        license_approval=body.get("license_approval"))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_library"})
+                return self._send(202, {"ok": True, "library": item,
+                                        "notice": "quarantined_until_explicit_artifact_scoped_license_review"
+                                        if item["status"] == "quarantined" else "explicit_license_evidence_recorded"})
+            if is_library_review:
+                library_id = path.removeprefix("/v1/libraries/").removesuffix("/review")
+                if not library_id or "/" in library_id:
+                    return self._send(400, {"ok": False, "error": "invalid_library_id"})
+                try:
+                    item = service.review_library(
+                        library_id, decision=body.get("decision"),
+                        reviewer=body.get("reviewer"),
+                        evidence_ref=body.get("evidence_ref"),
+                        artifact_scope=body.get("artifact_scope"),
+                        notes=body.get("notes", ""))
+                except KeyError:
+                    return self._send(404, {"ok": False, "error": "library_not_found"})
+                except (ValueError, TypeError, AttributeError) as exc:
+                    return self._send(409, {"ok": False, "error": str(exc) or "library_review_rejected"})
+                return self._send(200, {"ok": True, "library": item})
             if path == "/v1/ai-observatory/studies":
                 try:
                     study = service.record_ai_capability_study(
