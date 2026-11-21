@@ -159,7 +159,7 @@ class ACExecutionSandbox:
                     input=json.dumps(payload), text=True, encoding="utf-8",
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     cwd=workspace, env=env, timeout=self.timeout_seconds,
-                    check=False, preexec_fn=_limits,
+                    check=False,
                 )
             except subprocess.TimeoutExpired:
                 return {"ok": False, "status": "timeout", "error": "execution_timeout",
