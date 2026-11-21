@@ -15,7 +15,7 @@ from urllib.parse import quote
 
 _ALLOWED_HOSTS = {"pypi.org", "api.osv.dev"}
 _PACKAGE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
-_DEPENDENCY = re.compile(r"^\\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
+_DEPENDENCY = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 _MAX_RESPONSE = 2_000_000
 _USER_AGENT = "Alili-Cortex-Library-Inspector/1.0"
 
