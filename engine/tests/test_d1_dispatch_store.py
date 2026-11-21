@@ -15,13 +15,13 @@ class FakeStatement:
         return self
 
     async def first(self):
-        return self.db.first(self.sql, self.values)
+        return await self.db.first(self.sql, self.values)
 
     async def all(self):
-        return self.db.all(self.sql, self.values)
+        return await self.db.all(self.sql, self.values)
 
     async def run(self):
-        return self.db.run(self.sql, self.values)
+        return await self.db.run(self.sql, self.values)
 
 
 class FakeD1:
