@@ -46,7 +46,7 @@ class LibraryFoundryTests(unittest.TestCase):
         item = self.register(license_id="UNKNOWN")
         with self.assertRaisesRegex(ValueError, "license_not_in_allowlist"):
             self.foundry.review(item["library_id"], decision="approve",
-                                reviewer="reviewer", evidence_ref="https://example.org/license")
+                                reviewer="reviewer", evidence_ref="https://example.org/license", artifact_scope="package")
 
     def test_duplicate_artifact_is_rejected(self):
         self.register()
@@ -76,12 +76,12 @@ class LibraryFoundryTests(unittest.TestCase):
         item = self.register(artifact=None)
         with self.assertRaisesRegex(ValueError, "reviewer_and_https_evidence_required"):
             self.foundry.review(item["library_id"], decision="approve",
-                                reviewer="", evidence_ref="not-a-url")
+                                reviewer="", evidence_ref="not-a-url", artifact_scope="package")
 
     def test_review_rejects_unknown_library(self):
         with self.assertRaises(KeyError):
             self.foundry.review("missing", decision="reject",
-                                reviewer="reviewer", evidence_ref="https://example.org")
+                                reviewer="reviewer", evidence_ref="https://example.org", artifact_scope="package")
 
 
 if __name__ == "__main__":
