@@ -26,8 +26,10 @@ Cloudflare Python Workers execute under Pyodide. Cloudflare's standard-library d
 
 - Added `engine/alili_engine/async_brain_runtime.py`, a separate async/thread-free specialist dispatcher.
 - Added `engine/tests/test_async_brain_runtime.py` covering bounded concurrency, isolated specialist contexts, model readiness, partial failures, quality-review gating, and invalid plans.
+- Added `engine/alili_engine/cloudflare_workers_ai.py`, a fail-closed async adapter that requires an explicit free-plan confirmation and an allowlisted free model; it has no API-key or paid-provider fallback.
+- Added `engine/tests/test_cloudflare_workers_ai.py` for free-policy blocking, allowlist enforcement, normalized inference results, and empty-response handling.
 - The existing local `ACBrianRuntime` remains unchanged; this new class is an adapter foundation, not a deployed runtime.
-- The new async runtime expects an injected asynchronous model client. No Cloudflare binding adapter, Python Worker entrypoint, D1 persistence adapter, or deployed service binding has been added yet.
+- The new async runtime expects an injected asynchronous model client. The generic Workers AI adapter exists, but the Worker-specific FFI wrapper, Python Worker entrypoint, D1 persistence adapter, and deployed service binding have not been added yet.
 
 ## Security and billing gates
 
