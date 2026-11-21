@@ -157,7 +157,7 @@ class LibraryFoundry:
                 and (not q or q in (item["name"] + " " + item["library_id"] + " " + item["ecosystem"]).casefold())]
 
     def review(self, library_id: str, *, decision: str, reviewer: str,
-               evidence_ref: str, notes: str = "") -> dict:
+               evidence_ref: str, artifact_scope: str, notes: str = "") -> dict:
         if decision not in {"approve", "reject"}:
             raise ValueError("invalid_review_decision")
         item = self.get(library_id)
@@ -165,6 +165,8 @@ class LibraryFoundry:
             raise KeyError("library_not_found")
         if not reviewer.strip() or not evidence_ref.startswith("https://"):
             raise ValueError("reviewer_and_https_evidence_required")
+        if artifact_scope not in {"source_code", "documentation", "dataset", "model_weights", "package"}:
+            raise ValueError("invalid_artifact_scope")
         if decision == "approve" and item["license_id"] not in _ALLOWED_LICENSES:
             raise ValueError("license_not_in_allowlist")
         status = "approved" if decision == "approve" else "rejected"
@@ -175,7 +177,7 @@ class LibraryFoundry:
                     updated_at=? WHERE library_id=?
             """, (status, license_status,
                   json.dumps({"reviewer": reviewer, "evidence_ref": evidence_ref,
-                              "notes": notes}, ensure_ascii=False),
+                              "artifact_scope": artifact_scope, "notes": notes}, ensure_ascii=False),
                   _utc_now(), library_id))
         return self.get(library_id)
 
