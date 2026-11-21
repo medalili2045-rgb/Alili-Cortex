@@ -128,6 +128,21 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(saved["plan"]["execution_status"], "capability_not_implemented")
 
 
+    def test_ac_master_plans_independent_specialists_without_fake_dispatch(self):
+        headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
+        payload = {"objective": "ابحث عن مصادر ثم برمج تطبيقاً واختبره", "max_brains": 6}
+        request = Request(self.base + "/v1/brains/plan", data=json.dumps(payload).encode(),
+                          headers=headers, method="POST")
+        with urlopen(request) as response:
+            result = json.loads(response.read())
+        self.assertTrue(result["ok"])
+        plan = result["plan"]
+        ids = {item["brain_id"] for item in plan["assignments"]}
+        self.assertTrue({"ac_research", "ac_code", "ac_execution", "ac_reasoning"} <= ids)
+        self.assertFalse(plan["execution"]["dispatched"])
+        self.assertTrue(plan["isolation"]["separate_assignment_contexts"])
+        self.assertFalse(plan["isolation"]["shared_mutable_context"])
+
     def test_knowledge_scout_api_is_authenticated_and_quarantine_first(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
         with urlopen(Request(self.base + "/v1/knowledge-scout/status", headers=headers)) as response:
