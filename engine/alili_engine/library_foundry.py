@@ -10,6 +10,7 @@ import json
 import re
 import sqlite3
 from datetime import datetime, timezone
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -35,10 +36,15 @@ class LibraryFoundry:
         self.database_path = str(database_path)
         self._initialize()
 
+    @contextmanager
     def _connect(self):
         db = sqlite3.connect(self.database_path, timeout=10)
         db.row_factory = sqlite3.Row
-        return db
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     def _initialize(self):
         with self._connect() as db:
