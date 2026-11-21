@@ -105,7 +105,7 @@ class ACBrianRuntime:
             }
 
         review = self._quality_review(plan, results, float(temperature), max_tokens)
-        finalized = review.get("status") == "completed"
+        finalized = review.get("status") == "completed" and review.get("verdict") == "accepted"
         return {
             "dispatch_id": dispatch_id, "plan_id": plan.get("plan_id"),
             "status": "completed" if finalized else "completed_pending_review",
