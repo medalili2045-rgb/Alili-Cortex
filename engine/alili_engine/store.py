@@ -46,6 +46,107 @@ class TaskStore:
                 )
             """)
             db.execute("CREATE INDEX IF NOT EXISTS idx_tasks_created_at ON tasks(created_at)")
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS brain_dispatches (
+                    dispatch_id TEXT PRIMARY KEY,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    objective TEXT NOT NULL,
+                    plan_json TEXT NOT NULL,
+                    result_json TEXT,
+                    error_code TEXT
+                )
+            """)
+            db.execute("CREATE INDEX IF NOT EXISTS idx_brain_dispatches_created_at ON brain_dispatches(created_at)")
+
+    def create_brain_dispatch(self, dispatch_id: str, objective: str, plan: dict,
+                              *, status: str = "queued") -> dict:
+        if not isinstance(dispatch_id, str) or not dispatch_id.startswith("ac-dispatch-"):
+            raise ValueError("invalid_dispatch_id")
+        if not isinstance(objective, str) or not objective.strip() or len(objective) > 6000:
+            raise ValueError("invalid_dispatch_objective")
+        if not isinstance(plan, dict):
+            raise ValueError("invalid_dispatch_plan")
+        now = utc_now()
+        with closing(self._connect()) as db, db:
+            db.execute(
+                """INSERT INTO brain_dispatches
+                   (dispatch_id, created_at, updated_at, status, objective, plan_json)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (dispatch_id, now, now, status, objective, json.dumps(plan, ensure_ascii=False)),
+            )
+        return self.get_brain_dispatch(dispatch_id)
+
+    def update_brain_dispatch(self, dispatch_id: str, status: str, *,
+                              result: dict | None = None, error_code: str | None = None) -> dict:
+        allowed = {"queued", "running", "blocked", "partial_failure",
+                   "completed_pending_review", "completed", "failed"}
+        if status not in allowed:
+            raise ValueError("invalid_dispatch_status")
+        encoded = None
+        if result is not None:
+            encoded = json.dumps(result, ensure_ascii=False)
+            if len(encoded) > 200_000:
+                raise ValueError("dispatch_result_too_large")
+        with closing(self._connect()) as db, db:
+            row = db.execute("SELECT dispatch_id FROM brain_dispatches WHERE dispatch_id = ?",
+                             (dispatch_id,)).fetchone()
+            if row is None:
+                raise KeyError(dispatch_id)
+            db.execute(
+                """UPDATE brain_dispatches SET status = ?, updated_at = ?,
+                   result_json = COALESCE(?, result_json), error_code = ?
+                   WHERE dispatch_id = ?""",
+                (status, utc_now(), encoded, error_code, dispatch_id),
+            )
+        return self.get_brain_dispatch(dispatch_id)
+
+    def get_brain_dispatch(self, dispatch_id: str) -> dict | None:
+        with closing(self._connect()) as db:
+            row = db.execute("SELECT * FROM brain_dispatches WHERE dispatch_id = ?",
+                             (dispatch_id,)).fetchone()
+        if row is None:
+            return None
+        return {
+            "dispatch_id": row["dispatch_id"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "status": row["status"],
+            "objective": row["objective"],
+            "plan": json.loads(row["plan_json"]),
+            "result": json.loads(row["result_json"]) if row["result_json"] else None,
+            "error_code": row["error_code"],
+        }
+
+    def list_brain_dispatches(self, *, status: str | None = None, limit: int = 50) -> list[dict]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("invalid_dispatch_limit")
+        if status is not None and status not in {
+            "queued", "running", "blocked", "partial_failure",
+            "completed_pending_review", "completed", "failed"
+        }:
+            raise ValueError("invalid_dispatch_status_filter")
+        with closing(self._connect()) as db:
+            if status:
+                rows = db.execute(
+                    "SELECT * FROM brain_dispatches WHERE status = ? ORDER BY created_at DESC LIMIT ?",
+                    (status, limit)).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM brain_dispatches ORDER BY created_at DESC LIMIT ?",
+                    (limit,)).fetchall()
+        return [self._decode_brain_dispatch(row) for row in rows]
+
+    @staticmethod
+    def _decode_brain_dispatch(row) -> dict:
+        return {
+            "dispatch_id": row["dispatch_id"], "created_at": row["created_at"],
+            "updated_at": row["updated_at"], "status": row["status"],
+            "objective": row["objective"], "plan": json.loads(row["plan_json"]),
+            "result": json.loads(row["result_json"]) if row["result_json"] else None,
+            "error_code": row["error_code"],
+        }
 
     def create(self, input_text: str) -> dict:
         task_id = str(uuid.uuid4())
