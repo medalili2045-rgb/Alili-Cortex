@@ -180,6 +180,15 @@ class ApiTests(unittest.TestCase):
         payload = json.loads(caught.exception.read())
         self.assertFalse(payload["dispatch"]["dispatched"])
         self.assertEqual(payload["dispatch"]["hosted_fallback"], "disabled")
+        self.assertEqual(payload["record"]["status"], "blocked")
+        dispatch_id = payload["dispatch"]["dispatch_id"]
+        with urlopen(Request(self.base + "/v1/brains/dispatches/" + dispatch_id, headers=headers)) as response:
+            saved = json.loads(response.read())["dispatch"]
+        self.assertEqual(saved["status"], "blocked")
+        self.assertEqual(saved["result"]["dispatch_id"], dispatch_id)
+        with urlopen(Request(self.base + "/v1/brains/dispatches?status=blocked", headers=headers)) as response:
+            history = json.loads(response.read())["dispatches"]
+        self.assertTrue(any(item["dispatch_id"] == dispatch_id for item in history))
 
     def test_knowledge_scout_api_is_authenticated_and_quarantine_first(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
