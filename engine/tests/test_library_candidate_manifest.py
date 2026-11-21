@@ -1,6 +1,9 @@
 import json
 import unittest
+import tempfile
 from pathlib import Path
+
+from scripts.seed_library_candidates import seed
 
 
 class LibraryCandidateManifestTests(unittest.TestCase):
@@ -28,6 +31,19 @@ class LibraryCandidateManifestTests(unittest.TestCase):
             self.assertTrue(item["license_evidence_url"].startswith("https://"))
             self.assertEqual(item["version"], "unresolved")
             self.assertIn("verify_dependency_licenses", item["review_required"])
+
+    def test_seed_is_idempotent_and_keeps_all_candidates_quarantined(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = str(Path(directory) / "ac-seed-test.sqlite3")
+            manifest = str(Path(__file__).parents[1] / "data" / "library_candidates.json")
+            first = seed(database, manifest)
+            second = seed(database, manifest)
+            self.assertEqual(first["inserted"], len(self.manifest["candidates"]))
+            self.assertEqual(second["inserted"], 0)
+            self.assertEqual(second["already_present"], len(self.manifest["candidates"]))
+            self.assertEqual(second["registry"]["by_status"]["quarantined"],
+                             len(self.manifest["candidates"]))
+            self.assertEqual(second["registry"]["installations"], 0)
 
     def test_policy_is_free_only_and_fail_closed(self):
         policy = self.manifest["policy"]
