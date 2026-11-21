@@ -5,7 +5,6 @@ import subprocess/threading/resource-based sandbox code and never invokes Worker
 """
 import hmac
 import json
-import os
 from urllib.parse import urlsplit
 
 from workers import Response, WorkerEntrypoint
@@ -52,8 +51,8 @@ class Default(WorkerEntrypoint):
 
         if request.method == "GET" and path == "/v1/status":
             try:
-                probe = await self.env.AC_DB.prepare("SELECT 1 AS ok").first()
-                d1_ready = bool(probe and probe["ok"] == 1)
+                await self.env.AC_DB.prepare("SELECT 1 AS ok").run()
+                d1_ready = True
             except Exception:
                 d1_ready = False
             return _json({
