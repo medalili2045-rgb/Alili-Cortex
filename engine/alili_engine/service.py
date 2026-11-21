@@ -9,6 +9,7 @@ from .model import ModelNotConfigured
 from .models import ModelRegistry
 from .ecosystem import EcosystemRegistry
 from .provider_catalog import ProviderCatalog
+from .cloud_adapter import ACCloudAdapter
 from .study_blueprints import list_blueprints
 from .study import UniversalStudyEngine
 from .connectors import UniversalSourceConnector
@@ -25,7 +26,7 @@ from .observatory import AICapabilityObservatory
 class EngineService:
     def __init__(self, store: TaskStore, registry=None, planner=None, policy=None,
                  model_client=None, brain_registry=None, knowledge_store=None, training_store=None,
-                 model_registry=None, ecosystem_registry=None, provider_catalog=None):
+                 model_registry=None, ecosystem_registry=None, provider_catalog=None, cloud_adapter=None):
         self.store = store
         self.registry = registry or CapabilityRegistry()
         self.planner = planner or TaskPlanner()
@@ -38,6 +39,7 @@ class EngineService:
         self.models = model_registry or ModelRegistry()
         self.ecosystem = ecosystem_registry or EcosystemRegistry()
         self.providers = provider_catalog or ProviderCatalog()
+        self.cloud = cloud_adapter or ACCloudAdapter(store.database_path, self.providers)
         self.study = UniversalStudyEngine(store.database_path, self.ecosystem, self.knowledge)
         self.knowledge.set_source_validator(self._knowledge_source_is_reviewable)
         self.connectors = UniversalSourceConnector(self.ecosystem)
@@ -93,6 +95,15 @@ class EngineService:
 
     def provider_summary(self) -> dict:
         return self.providers.summary()
+
+    def cloud_status(self) -> dict:
+        return self.cloud.status()
+
+    def cloud_plan(self, task: str, *, units: int = 1) -> dict:
+        return self.cloud.plan(task, units=units)
+
+    def reserve_cloud_capacity(self, task: str, *, units: int = 1) -> dict:
+        return self.cloud.reserve(task, units=units)
 
     def ecosystem_catalog(self, *, domain=None, query=None, limit=100) -> list[dict]:
         return self.ecosystem.list(domain=domain, query=query, limit=limit)

@@ -131,6 +131,16 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(200, {"ok": True, "service": "alili-cortex-engine", "version": "0.6.0"})
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
+            if path == "/v1/cloud/status":
+                return self._send(200, {"ok": True, "cloud": service.cloud_status()})
+            if path == "/v1/cloud/plan":
+                query = parse_qs(parsed.query)
+                try:
+                    plan = service.cloud_plan(query.get("task", [""])[0],
+                                             units=int(query.get("units", ["1"])[0]))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_cloud_plan"})
+                return self._send(200, {"ok": True, "plan": plan})
             if path == "/v1/providers":
                 query = parse_qs(parsed.query)
                 try:
@@ -222,6 +232,21 @@ def create_handler(service: EngineService, expected_token: str):
                                         "notice": "reference_catalog_not_runtime_integrations"})
             if path == "/v1/ai-observatory/response-style":
                 return self._send(200, {"ok": True, "policy": service.ai_response_style()})
+            if path == "/v1/cloud/reservations":
+                task = body.get("task")
+                units = body.get("units", 1)
+                if not isinstance(task, str) or not task.strip():
+                    return self._send(400, {"ok": False, "error": "invalid_cloud_task"})
+                if isinstance(units, bool) or not isinstance(units, int) or units < 1:
+                    return self._send(400, {"ok": False, "error": "invalid_quota_units"})
+                try:
+                    reservation = service.reserve_cloud_capacity(task.strip(), units=units)
+                except ValueError as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                status = 201 if reservation.get("reservation_created") else 409
+                return self._send(status, {"ok": reservation.get("reservation_created", False),
+                                           "reservation": reservation})
+
             if path == "/v1/ai-observatory/studies":
                 query = parse_qs(parsed.query)
                 try:

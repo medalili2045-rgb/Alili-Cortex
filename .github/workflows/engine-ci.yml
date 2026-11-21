@@ -2,7 +2,7 @@ name: Alili Cortex Engine CI
 
 on:
   push:
-    branches: [main, "feat/**", "fix/**"]
+    branches: [main, "feat/**", "fix/**", "ac-*"]
     paths:
       - "engine/**"
       - ".github/workflows/engine-ci.yml"
