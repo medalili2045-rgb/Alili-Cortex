@@ -35,7 +35,13 @@ _SAFE_NAMES = {
     "tuple", "set", "True", "False", "None",
 }
 _CHILD = r'''
-import ast, json, sys
+import ast, json, sys, resource
+resource.setrlimit(resource.RLIMIT_CPU, (3, 3))
+resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
+resource.setrlimit(resource.RLIMIT_NOFILE, (16, 16))
+resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
+if hasattr(resource, "RLIMIT_NPROC"):
+    resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
 payload = json.loads(sys.stdin.read())
 code = payload["code"]
 tree = ast.parse(code, mode="exec")
@@ -90,17 +96,6 @@ except BaseException as exc:
 class ExecutionRejected(ValueError):
     """Raised when a task violates the AC execution policy."""
 
-
-def _limits():
-    try:
-        import resource
-        resource.setrlimit(resource.RLIMIT_CPU, (3, 3))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
-        resource.setrlimit(resource.RLIMIT_NOFILE, (16, 16))
-        if hasattr(resource, "RLIMIT_NPROC"):
-            resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
-    except (ImportError, OSError, ValueError):
-        pass
 
 
 class ACExecutionSandbox:
