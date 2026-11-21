@@ -9,9 +9,10 @@ from alili_engine.store import TaskStore
 
 
 class FakeLocalModel:
-    def __init__(self, ready=True, fail_brain=None):
+    def __init__(self, ready=True, fail_brain=None, review_response="Verdict: ACCEPT. No blocking contradictions found."):
         self.ready = ready
         self.fail_brain = fail_brain
+        self.review_response = review_response
         self.calls = []
 
     def status(self):
@@ -24,7 +25,7 @@ class FakeLocalModel:
         if self.fail_brain and self.fail_brain in system:
             raise RuntimeError("simulated_local_failure")
         if "independent quality reviewer" in system:
-            content = "Verdict: ACCEPT. No blocking contradictions found."
+            content = self.review_response
         else:
             content = "Specialist findings with assumptions and risks."
         return {"model": "test-local-model", "content": content,
@@ -63,6 +64,14 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(len(result["results"]), 2)
         self.assertTrue(all(item["isolated_context"] for item in result["results"]))
         self.assertEqual(len(model.calls), 3)
+
+    def test_needs_revision_quality_verdict_does_not_finalize(self):
+        model = FakeLocalModel(review_response="Verdict: NEEDS_REVISION. Evidence is missing.")
+        runtime = ACBrianRuntime(model, BrainRegistry())
+        result = runtime.dispatch(sample_plan())
+        self.assertEqual(result["status"], "completed_pending_review")
+        self.assertFalse(result["finalized"])
+        self.assertEqual(result["quality_review"]["verdict"], "needs_revision")
 
     def test_unregistered_brain_is_rejected_before_dispatch(self):
         runtime = ACBrianRuntime(FakeLocalModel(), BrainRegistry())
