@@ -4,6 +4,7 @@ import sqlite3
 from contextlib import closing
 
 from .brains import BrainRegistry, BrainRouter
+from .master_orchestrator import ACMasterOrchestrator
 from .knowledge import KnowledgeStore
 from .model import ModelNotConfigured
 from .models import ModelRegistry
@@ -39,6 +40,7 @@ class EngineService:
         self.model_client = model_client
         self.brain_registry = brain_registry or BrainRegistry()
         self.brain_router = BrainRouter(self.brain_registry)
+        self.master = ACMasterOrchestrator(self.brain_registry)
         self.knowledge = knowledge_store or KnowledgeStore(store.database_path)
         self.training = training_store or TrainingStore(store.database_path)
         self.models = model_registry or ModelRegistry()
@@ -60,8 +62,11 @@ class EngineService:
         return {"policy": "free_first_no_paid_fallback", "capabilities": self.registry.all()}
 
     def brains(self) -> dict:
-        return {"routing_mode": "logical_registry_only", "execution_enabled": False,
-                "brains": self.brain_registry.all()}
+        return {"routing_mode": "master_multi_brain_planning", "execution_enabled": False,
+                "coordinator": "AC Master", "brains": self.brain_registry.all()}
+
+    def plan_brains(self, objective: str, *, requested_brains=None, max_brains: int = 6) -> dict:
+        return self.master.plan(objective, requested_brains=requested_brains, max_brains=max_brains)
 
     def route(self, task_type: str) -> dict:
         return self.brain_router.route(task_type).to_dict()
