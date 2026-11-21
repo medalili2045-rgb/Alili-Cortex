@@ -1,5 +1,6 @@
 import json
 import unittest
+import urllib.error
 from pathlib import Path
 
 from alili_engine.library_inspector import (
@@ -28,6 +29,8 @@ class FakeOpener:
 
     def __call__(self, request, timeout=0):
         self.requests.append((request, timeout))
+        if not self.responses:
+            raise urllib.error.URLError('mock network unavailable')
         return FakeResponse(self.responses.pop(0))
 
 
