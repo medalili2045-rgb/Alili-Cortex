@@ -5,6 +5,7 @@ from contextlib import closing
 
 from .brains import BrainRegistry, BrainRouter
 from .master_orchestrator import ACMasterOrchestrator
+from .evolution import ACEvolutionEngine
 from .knowledge import KnowledgeStore
 from .model import ModelNotConfigured
 from .models import ModelRegistry
@@ -41,6 +42,7 @@ class EngineService:
         self.brain_registry = brain_registry or BrainRegistry()
         self.brain_router = BrainRouter(self.brain_registry)
         self.master = ACMasterOrchestrator(self.brain_registry)
+        self.evolution = ACEvolutionEngine(store.database_path)
         self.knowledge = knowledge_store or KnowledgeStore(store.database_path)
         self.training = training_store or TrainingStore(store.database_path)
         self.models = model_registry or ModelRegistry()
@@ -354,3 +356,15 @@ class EngineService:
 
     def get_task(self, task_id: str) -> dict | None:
         return self.store.get(task_id)
+
+    def evolution_status(self) -> dict:
+        return self.evolution.status()
+
+    def evolution_proposals(self, *, status=None, limit=50) -> list[dict]:
+        return self.evolution.list(status=status, limit=limit)
+
+    def propose_evolution(self, **kwargs) -> dict:
+        return self.evolution.propose(**kwargs)
+
+    def review_evolution(self, proposal_id: str, **kwargs) -> dict:
+        return self.evolution.review(proposal_id, **kwargs)
