@@ -137,6 +137,17 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["connected"], 0)
         self.assertTrue(all(not item["enabled_by_default"] for item in payload["providers"]))
 
+    def test_cloud_adapter_status_and_default_plan_are_authenticated_and_fail_closed(self):
+        headers = {"Authorization": "Bearer " + self.token}
+        with urlopen(Request(self.base + "/v1/cloud/status", headers=headers)) as response:
+            status = json.loads(response.read())
+        self.assertTrue(status["ok"])
+        self.assertEqual(status["cloud"]["connected_providers"], 0)
+        with urlopen(Request(self.base + "/v1/cloud/plan?task=gpu_experiment", headers=headers)) as response:
+            plan = json.loads(response.read())
+        self.assertEqual(plan["plan"]["status"], "unavailable")
+        self.assertEqual(plan["plan"]["paid_fallback"], "prohibited")
+
     def test_ecosystem_catalog_and_domain_filter(self):
         headers = {"Authorization": "Bearer " + self.token}
         with urlopen(Request(self.base + "/v1/ecosystem?domain=robotics", headers=headers)) as response:

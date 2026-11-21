@@ -81,7 +81,9 @@ class ACCloudAdapterTests(unittest.TestCase):
             self.assertEqual(reserved["status"], "reserved_locally_not_dispatched")
             blocked = adapter.reserve("gpu_experiment", units=2)
             self.assertFalse(blocked["reservation_created"])
-            self.assertEqual(blocked["reservation"]["quota"]["reason"], "free_quota_exhausted")
+            self.assertEqual(blocked["plan"]["status"], "unavailable")
+            self.assertTrue(any(item["reason"] == "free_quota_exhausted"
+                                for item in blocked["plan"]["blocked_candidates"]))
         finally:
             adapter.ledger.close()
 
