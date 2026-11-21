@@ -20,7 +20,7 @@ Resolve PyPI release metadata for the curated AC Python foundation candidates an
 From the repository root:
 
 ```bash
-python -m scripts.inspect_library_candidates
+PYTHONPATH=engine python -m scripts.inspect_library_candidates
 ```
 
 Skip OSV lookups:
