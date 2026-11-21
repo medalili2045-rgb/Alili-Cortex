@@ -97,6 +97,15 @@ def _version_tuple(version: str) -> tuple | None:
     return release, phase, suffix
 
 
+def _compare_versions(left: tuple, right: tuple) -> int:
+    left_release, left_phase, left_suffix = left
+    right_release, right_phase, right_suffix = right
+    width = max(len(left_release), len(right_release))
+    lkey = (left_release + (0,) * (width - len(left_release)), left_phase, left_suffix)
+    rkey = (right_release + (0,) * (width - len(right_release)), right_phase, right_suffix)
+    return (lkey > rkey) - (lkey < rkey)
+
+
 def version_satisfies(version: str, specifier: str) -> bool | None:
     """Return None when the specifier is outside the deliberately supported subset."""
     if not specifier:
@@ -121,25 +130,26 @@ def version_satisfies(version: str, specifier: str) -> bool | None:
         target = _version_tuple(wanted)
         if target is None:
             return None
+        comparison = _compare_versions(candidate, target)
         if op == "===":
             ok = version == wanted
         elif op == "==":
-            ok = candidate == target
+            ok = comparison == 0
         elif op == "!=":
-            ok = candidate != target
+            ok = comparison != 0
         elif op == ">=":
-            ok = candidate >= target
+            ok = comparison >= 0
         elif op == "<=":
-            ok = candidate <= target
+            ok = comparison <= 0
         elif op == ">":
-            ok = candidate > target
+            ok = comparison > 0
         elif op == "<":
-            ok = candidate < target
+            ok = comparison < 0
         elif op == "~=":
             release, _, _ = target
             upper = release[:-1] + (release[-1] + 1,) if len(release) > 1 else (release[0] + 1,)
             upper_target = (upper, 3, 0)
-            ok = candidate >= target and candidate < upper_target
+            ok = comparison >= 0 and _compare_versions(candidate, upper_target) < 0
         else:
             return None
         if not ok:
