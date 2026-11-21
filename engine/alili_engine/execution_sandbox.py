@@ -50,8 +50,8 @@ safe_names = set(payload["safe_names"])
 for node in ast.walk(tree):
     if not isinstance(node, allowed):
         raise ValueError("syntax_not_allowed:" + type(node).__name__)
-    if isinstance(node, ast.Name) and node.id not in safe_names:
-        raise ValueError("name_not_allowed:" + node.id)
+    if isinstance(node, ast.Name) and node.id.startswith("__"):
+        raise ValueError("dunder_name_not_allowed")
     if isinstance(node, ast.Call):
         if not isinstance(node.func, ast.Name) or node.func.id not in safe_names:
             raise ValueError("call_not_allowed")
@@ -130,8 +130,8 @@ class ACExecutionSandbox:
         for node in ast.walk(tree):
             if not isinstance(node, _ALLOWED_NODES):
                 raise ExecutionRejected("syntax_not_allowed:" + type(node).__name__)
-            if isinstance(node, ast.Name) and node.id not in _SAFE_NAMES:
-                raise ExecutionRejected("name_not_allowed:" + node.id)
+            if isinstance(node, ast.Name) and node.id.startswith("__"):
+                raise ExecutionRejected("dunder_name_not_allowed")
             if isinstance(node, ast.Call) and (
                 not isinstance(node.func, ast.Name) or node.func.id not in _SAFE_NAMES
             ):
