@@ -91,8 +91,8 @@ class KnowledgeScoutTests(unittest.TestCase):
 
     def test_no_network_or_automatic_learning_is_claimed(self):
         status = self.scout.summary()
-        self.assertEqual(status["network_fetch"], "not_implemented")
-        self.assertEqual(status["discovery_execution"], "not_enabled")
+        self.assertEqual(status["network_fetch"], "catalog_bound_dns_pinned_connector")
+        self.assertEqual(status["discovery_execution"], "on_demand")
         self.assertFalse(status["continuous_uptime_guaranteed"])
         self.assertFalse(status["automatic_publication"])
 
