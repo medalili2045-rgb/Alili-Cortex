@@ -1,0 +1,127 @@
+name: Alili Cortex - Build and Verify
+
+on:
+  push:
+    branches: [main, rebuild/base-ui]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, rebuild/base-ui]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test Cloudflare Worker
+        run: node --test worker/test/*.test.js
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.32.8"
+          channel: stable
+          cache: true
+
+      - name: Set up Java for Android build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Verify Java version
+        run: java -version
+
+      - name: Generate Android platform files
+        run: |
+          flutter create --platforms=android --project-name=alili_cortex --org=com.alili.cortex /tmp/alili_cortex_android
+          cp -R /tmp/alili_cortex_android/android ./android
+          sed -i 's/ndkVersion = flutter.ndkVersion/ndkVersion = "27.0.12077973"/' android/app/build.gradle.kts
+
+      - name: Install Alili Cortex Android launcher icon
+        run: |
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-anydpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/values
+          cat > android/app/src/main/res/drawable/ic_launcher_foreground.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path
+                  android:fillColor="#00000000"
+                  android:strokeColor="#F4F7FC"
+                  android:strokeWidth="8"
+                  android:strokeLineCap="round"
+                  android:strokeLineJoin="round"
+                  android:pathData="M20,86 L50,18 Q54,10 58,18 L88,86 M32,64 L76,64" />
+              <path
+                  android:fillColor="#3478F6"
+                  android:pathData="M60,29 L43,57 L56,57 L46,79 L70,48 L57,48 Z" />
+          </vector>
+          EOF
+          cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
+          <resources>
+              <color name="ic_launcher_background">#111827</color>
+          </resources>
+          EOF
+          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/ic_launcher_background" />
+              <foreground android:drawable="@drawable/ic_launcher_foreground" />
+          </adaptive-icon>
+          EOF
+          cat > android/app/src/main/res/mipmap-anydpi/ic_launcher.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="48dp"
+              android:height="48dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path
+                  android:fillColor="#111827"
+                  android:pathData="M0,0 H108 V108 H0 Z" />
+              <path
+                  android:fillColor="#00000000"
+                  android:strokeColor="#F4F7FC"
+                  android:strokeWidth="8"
+                  android:strokeLineCap="round"
+                  android:strokeLineJoin="round"
+                  android:pathData="M20,86 L50,18 Q54,10 58,18 L88,86 M32,64 L76,64" />
+              <path
+                  android:fillColor="#3478F6"
+                  android:pathData="M60,29 L43,57 L56,57 L46,79 L70,48 L57,48 Z" />
+          </vector>
+          EOF
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Widget tests
+        run: flutter test
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Publish APK to GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[publish-apk]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="android-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" build/app/outputs/flutter-apk/app-release.apk \
+            --target "$GITHUB_SHA" \
+            --title "Alili Cortex Android ${GITHUB_RUN_NUMBER}" \
+            --notes "Automated release APK. Built only after Worker tests, Flutter analysis, widget tests, and release APK build succeeded."
+

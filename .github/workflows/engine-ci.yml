@@ -1,0 +1,32 @@
+name: Alili Cortex Engine CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+    paths:
+      - "engine/**"
+      - ".github/workflows/engine-ci.yml"
+  pull_request:
+    branches: [main, "feat/**", "fix/**"]
+    paths:
+      - "engine/**"
+      - ".github/workflows/engine-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify syntax
+        run: python -m compileall -q engine/alili_engine engine/tests
+      - name: Run engine tests
+        env:
+          PYTHONPATH: engine
+        run: python -m unittest discover -s engine/tests -v

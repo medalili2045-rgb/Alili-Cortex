@@ -1,0 +1,66 @@
+name: Alili Cortex High-Frequency Study
+
+on:
+  # GitHub Actions supports scheduled cron at a five-minute minimum.
+  # This is the fastest supported cadence here; it is not a 30-second timer.
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ac-high-frequency-study
+  cancel-in-progress: false
+
+jobs:
+  study:
+    # Keep disabled until the owner explicitly enables it after reviewing
+    # the repository's included Actions minutes and possible overage billing.
+    if: vars.AC_DAILY_STUDY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore study checkpoint
+        uses: actions/cache@v4
+        with:
+          path: engine/data/ac-autonomous.sqlite3
+          key: ${{ runner.os }}-ac-study-main-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-ac-study-main-
+
+      - name: Run one tiny AC study cycle
+        working-directory: engine
+        env:
+          PYTHONPATH: .
+          ALILI_ENGINE_DB_PATH: ./data/ac-autonomous.sqlite3
+        run: |
+          python -m alili_engine.autonomous_worker \
+            --once \
+            --db-path ./data/ac-autonomous.sqlite3 \
+            --interval-hours 1 \
+            --max-documents 1
+
+      - name: Report study state
+        if: always()
+        working-directory: engine
+        env:
+          PYTHONPATH: .
+          ALILI_ENGINE_DB_PATH: ./data/ac-autonomous.sqlite3
+        run: |
+          if [ -f ./data/ac-autonomous.sqlite3 ]; then
+            python -m alili_engine.autonomous_worker \
+              --status \
+              --db-path ./data/ac-autonomous.sqlite3
+          else
+            echo "Study database was not created."
+          fi

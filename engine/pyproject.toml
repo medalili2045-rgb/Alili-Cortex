@@ -1,0 +1,12 @@
+[project]
+name = "alili-cortex-engine"
+version = "0.6.0"
+description = "Independent free-first Alili Cortex engine with open ecosystem intelligence catalog"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.unittest]
+start-directory = "tests"
+
+[project.scripts]
+ac-autonomous-worker = "alili_engine.autonomous_worker:main"

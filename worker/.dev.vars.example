@@ -1,0 +1,9 @@
+# Copy to .dev.vars locally. Never commit real values.
+APP_API_KEY=replace-with-a-long-random-secret
+GEMINI_API_KEY=
+GROQ_API_KEY=
+NVIDIA_API_KEY=
+FREE_GEMINI_CONFIRMED=false
+FREE_GROQ_CONFIRMED=false
+FREE_NVIDIA_CONFIRMED=false
+FREE_CLOUDFLARE_CONFIRMED=false
