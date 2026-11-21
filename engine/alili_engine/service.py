@@ -66,8 +66,9 @@ class EngineService:
         return {"policy": "free_first_no_paid_fallback", "capabilities": self.registry.all()}
 
     def brains(self) -> dict:
-        return {"routing_mode": "master_multi_brain_planning", "execution_enabled": False,
-                "coordinator": "AC Master", "brains": self.brain_registry.all()}
+        runtime = self.brain_runtime.status()
+        return {"routing_mode": "master_multi_brain_dispatch", "execution_enabled": runtime["available"],
+                "runtime": runtime, "coordinator": "AC Master", "brains": self.brain_registry.all()}
 
     def plan_brains(self, objective: str, *, requested_brains=None, max_brains: int = 6) -> dict:
         return self.master.plan(objective, requested_brains=requested_brains, max_brains=max_brains)
