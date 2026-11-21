@@ -17,5 +17,3 @@ database_name = "alili-cortex-worker-state"
 database_id = "a5e946a9-ef89-4336-a589-6407820eb13d"
 migrations_dir = "migrations"
 
-[observability]
-enabled = true
