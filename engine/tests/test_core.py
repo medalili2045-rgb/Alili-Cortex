@@ -146,6 +146,17 @@ class ApiTests(unittest.TestCase):
                             data=json.dumps({"source_id": "python-docs", "query": "async"}).encode(),
                             headers=headers, method="POST"))
         self.assertEqual(caught.exception.code, 400)
+        enable = Request(self.base + "/v1/knowledge-scout/sources/python-docs/enable",
+                         data=json.dumps({"terms_evidence_url": "https://docs.python.org/3/license.html"}).encode(),
+                         headers=headers, method="POST")
+        with urlopen(enable) as response:
+            self.assertTrue(json.loads(response.read())["source"]["enabled"])
+        job_request = Request(self.base + "/v1/knowledge-scout/jobs",
+                              data=json.dumps({"source_id": "python-docs", "query": "async"}).encode(),
+                              headers=headers, method="POST")
+        with urlopen(job_request) as response:
+            job = json.loads(response.read())["job"]
+        self.assertEqual(job["status"], "queued")
 
     def test_license_intelligence_api_is_authenticated_and_never_approves_or_installs(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
