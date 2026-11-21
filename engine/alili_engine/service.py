@@ -21,12 +21,13 @@ from .store import TaskStore
 from .training import TrainingStore, training_policy
 from .training_runtime import training_preflight
 from .observatory import AICapabilityObservatory
+from .execution_sandbox import ACExecutionSandbox
 
 
 class EngineService:
     def __init__(self, store: TaskStore, registry=None, planner=None, policy=None,
                  model_client=None, brain_registry=None, knowledge_store=None, training_store=None,
-                 model_registry=None, ecosystem_registry=None, provider_catalog=None, cloud_adapter=None):
+                 model_registry=None, ecosystem_registry=None, provider_catalog=None, cloud_adapter=None, execution_sandbox=None):
         self.store = store
         self.registry = registry or CapabilityRegistry()
         self.planner = planner or TaskPlanner()
@@ -45,6 +46,7 @@ class EngineService:
         self.connectors = UniversalSourceConnector(self.ecosystem)
         self.links = KnowledgeLinkGraph(store.database_path)
         self.ai_observatory = AICapabilityObservatory(store.database_path)
+        self.execution = execution_sandbox or ACExecutionSandbox()
 
     def capabilities(self) -> dict:
         return {"policy": "free_first_no_paid_fallback", "capabilities": self.registry.all()}
