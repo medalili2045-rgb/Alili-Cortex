@@ -380,7 +380,7 @@ def create_handler(service: EngineService, expected_token: str):
                        "/v1/connectors/fetch", "/v1/links",
                        "/v1/ai-observatory/studies", "/v1/ai-observatory/evaluate-response",
                        "/v1/knowledge-scout/sources", "/v1/knowledge-scout/jobs",
-                       "/v1/knowledge-scout/proposals"}
+                       "/v1/knowledge-scout/proposals", "/v1/knowledge-scout/discover"}
             is_scout_source_enable = path.startswith("/v1/knowledge-scout/sources/") and path.endswith("/enable")
             is_library_review = path.startswith("/v1/libraries/") and path.endswith("/review")
             is_knowledge_transition = path.startswith("/v1/knowledge/") and path.endswith("/transition")
@@ -422,6 +422,24 @@ def create_handler(service: EngineService, expected_token: str):
                     return self._send(400, {"ok": False, "error": str(exc)})
                 return self._send(202, {"ok": True, "job": job,
                                         "notice": "queued_only_no_fetch_performed"})
+            if path == "/v1/knowledge-scout/discover":
+                source_id = body.get("source_id")
+                domain = body.get("domain")
+                brain_id = body.get("brain_id")
+                artifact_url = body.get("artifact_url")
+                if (not isinstance(source_id, str) or not source_id or
+                        not isinstance(domain, str) or not isinstance(brain_id, str) or
+                        (artifact_url is not None and not isinstance(artifact_url, str))):
+                    return self._send(400, {"ok": False, "error": "invalid_scout_discovery_request"})
+                try:
+                    result = service.discover_scout_knowledge(
+                        source_id=source_id, artifact_url=artifact_url,
+                        domain=domain, brain_id=brain_id)
+                except KeyError as exc:
+                    return self._send(404, {"ok": False, "error": str(exc)})
+                except (ValueError, TypeError) as exc:
+                    return self._send(409, {"ok": False, "error": str(exc)})
+                return self._send(200, {"ok": True, "discovery": result})
             if path == "/v1/knowledge-scout/proposals":
                 try:
                     proposal = service.propose_scout_knowledge(
