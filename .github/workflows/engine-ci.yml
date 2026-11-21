@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify syntax
-        run: python -m compileall -q engine/alili_engine engine/tests engine/scripts
+        run: python -m compileall -q engine/alili_engine engine/cloudflare_worker engine/tests engine/scripts
       - name: Run engine tests
         env:
           PYTHONPATH: engine
