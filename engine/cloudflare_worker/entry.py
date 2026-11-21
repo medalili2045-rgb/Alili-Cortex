@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hmac
 import json
-import os
+from uuid import uuid4
 from urllib.parse import parse_qs, urlsplit
 
 from workers import Response, WorkerEntrypoint
@@ -77,16 +77,22 @@ class Default(WorkerEntrypoint):
         path = parsed.path
         if path == "/health" and request.method == "GET":
             try:
-                _token, _registry, runtime, _store, _master = self._engine()
+                _token, _registry, runtime, store, _master = self._engine()
                 state = await runtime.status()
+                migration = await store._first(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+                    "ac_brain_dispatches",
+                )
+                persistence = "ready" if migration else "migration_required"
             except Exception:
                 state = {"status": "unavailable"}
+                persistence = "unavailable"
             return self._json(200, {
                 "ok": True,
                 "service": "alili-cortex-python-engine",
                 "deployment": "preview",
                 "runtime": state,
-                "persistence": "d1_binding_required",
+                "persistence": persistence,
                 "paid_fallback": "disabled",
             })
 
@@ -129,7 +135,7 @@ class Default(WorkerEntrypoint):
             if not isinstance(plan, dict):
                 return self._json(400, {"ok": False, "error": "plan_required"})
             try:
-                dispatch_id = "ac-dispatch-" + os.urandom(10).hex()
+                dispatch_id = "ac-dispatch-" + uuid4().hex[:20]
                 await store.create_brain_dispatch(
                     dispatch_id, plan.get("objective"), plan, status="queued"
                 )
@@ -147,6 +153,13 @@ class Default(WorkerEntrypoint):
                     error_code=result.get("reason"),
                 )
             except (ValueError, TypeError) as exc:
+                try:
+                    if "dispatch_id" in locals():
+                        await store.update_brain_dispatch(
+                            dispatch_id, "failed", error_code=type(exc).__name__
+                        )
+                except Exception:
+                    pass
                 return self._json(400, {"ok": False, "error": str(exc)})
             except Exception as exc:
                 try:
