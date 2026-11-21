@@ -134,6 +134,8 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(200, {"ok": True, "service": "alili-cortex-engine", "version": "0.6.0"})
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
+            if path == "/v1/license-intelligence/status":
+                return self._send(200, {"ok": True, "license_intelligence": service.license_intelligence_status()})
             if path == "/v1/execution/status":
                 return self._send(200, {"ok": True, "execution": service.execution_status()})
             if path == "/v1/cloud/status":
@@ -345,7 +347,7 @@ def create_handler(service: EngineService, expected_token: str):
             path = urlsplit(self.path).path
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
-            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/knowledge", "/v1/execution/run", "/v1/libraries",
+            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/knowledge", "/v1/execution/run", "/v1/libraries", "/v1/license-intelligence/analyze",
                        "/v1/training/runs", "/v1/training/preflight",
                        "/v1/study/evidence", "/v1/study/sessions",
                        "/v1/connectors/fetch", "/v1/links",
@@ -361,6 +363,16 @@ def create_handler(service: EngineService, expected_token: str):
             if error:
                 return self._send(error[0], {"ok": False, "error": error[1]})
 
+            if path == "/v1/license-intelligence/analyze":
+                dependency_report = body.get("dependency_report")
+                if not isinstance(dependency_report, dict):
+                    return self._send(400, {"ok": False, "error": "dependency_report_required"})
+                try:
+                    report = service.analyze_dependency_licenses(dependency_report)
+                except (ValueError, TypeError, AttributeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_dependency_report"})
+                return self._send(200, {"ok": True, "report": report,
+                                        "notice": "analysis_only_all_packages_remain_quarantined"})
             if path == "/v1/libraries":
                 artifact = None
                 encoded_artifact = body.get("artifact_base64")
