@@ -29,7 +29,13 @@ Cloudflare Python Workers execute under Pyodide. Cloudflare's standard-library d
 - Added `engine/alili_engine/cloudflare_workers_ai.py`, a fail-closed async adapter that requires an explicit free-plan confirmation and an allowlisted free model; it has no API-key or paid-provider fallback.
 - Added `engine/tests/test_cloudflare_workers_ai.py` for free-policy blocking, allowlist enforcement, normalized inference results, and empty-response handling.
 - The existing local `ACBrianRuntime` remains unchanged; this new class is an adapter foundation, not a deployed runtime.
-- The new async runtime expects an injected asynchronous model client. The generic Workers AI adapter exists, but the Worker-specific FFI wrapper, Python Worker entrypoint, D1 persistence adapter, and deployed service binding have not been added yet.
+- The new async runtime expects an injected asynchronous model client. The generic Workers AI adapter is connected through an awaited Python FFI wrapper in the isolated preview entrypoint.
+- Added `engine/alili_engine/d1_dispatch_store.py`, an async D1 adapter implementing the existing brain-dispatch persistence contract.
+- Added additive migration `engine/migrations/0001_ac_brain_dispatches.sql`; it creates only a new dispatch table and indexes and does not alter the existing `worker_runs` or `ac_chat_messages` tables.
+- Added `engine/cloudflare_worker/entry.py` with authenticated runtime, planning, dispatch, and dispatch-history routes.
+- Added `engine/wrangler.toml` for a separate Worker named `ac-cortex-python-engine-preview`, using Workers AI and the existing D1 database. `ALILI_FREE_PLAN_CONFIRMED` is hard-set to `false`.
+- Added D1 adapter tests and expanded Engine CI syntax checks to include the Python Worker entrypoint.
+- None of these changes has been deployed; the D1 migration has not been applied, no Worker secret has been written, and the existing production Workers/bindings remain unchanged.
 
 ## Security and billing gates
 
@@ -42,9 +48,12 @@ Cloudflare Python Workers execute under Pyodide. Cloudflare's standard-library d
 
 1. Rotate exposed provider credentials and convert any required replacement values to Worker Secrets.
 2. Build and test a Cloudflare Workers AI async model adapter with an explicit free-model allowlist and hard no-paid-fallback behavior.
-3. Build a Python Worker entrypoint and a D1 persistence adapter for the engine state; do not rely on ephemeral local SQLite files.
-4. Expose authenticated engine routes through a new Service Binding, preserving the current provider gateway and autonomous heartbeat.
-5. Run integration tests against a non-production preview, verify the free-plan eligibility and quota limits, then deploy only after those gates pass.
+1. Verify the Cloudflare account plan and Workers AI eligibility without enabling billing; the connected OAuth still lacks Billing Read permission.
+2. Run the new Engine CI suite and resolve any failures.
+3. Apply the additive D1 migration only after plan and data-handling review.
+4. Set the API bearer token as a Worker Secret, then deploy the isolated preview Worker.
+5. Test health, authentication, planning, real inference, D1 persistence, and dispatch history on the preview.
+6. Only after all checks pass, add a separate reviewed Service Binding change to the existing JavaScript gateway.
 
 ## Cloudflare references
 
