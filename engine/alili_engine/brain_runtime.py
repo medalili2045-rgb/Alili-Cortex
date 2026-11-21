@@ -18,7 +18,7 @@ class BrainDispatchError(ValueError):
 class ACBrianRuntime:
     VERSION = "1.0.0"
     MAX_ASSIGNMENTS = 8
-    MAX_OBJECTIVE_CHARS = 6_000
+    MAX_OBJECTIVE_CHARS = 4_000
     MAX_OUTPUT_CHARS = 12_000
     MAX_WORKERS = 4
 
@@ -135,6 +135,9 @@ class ACBrianRuntime:
                 raise BrainDispatchError("duplicate_or_invalid_brain_id")
             if self.brain_registry.get(brain_id) is None:
                 raise BrainDispatchError("unregistered_brain:" + brain_id)
+            assignment_objective = item.get("objective", objective)
+            if not isinstance(assignment_objective, str) or not assignment_objective.strip() or len(assignment_objective) > 1000:
+                raise BrainDispatchError("invalid_assignment_objective")
             seen.add(brain_id)
 
     def _run_assignment(self, plan: dict, assignment: dict,
@@ -174,7 +177,7 @@ class ACBrianRuntime:
         reviewer_id = "ac_reasoning"
         if self.brain_registry.get(reviewer_id) is None:
             return {"status": "blocked", "reason": "quality_reviewer_not_registered"}
-        compact = [{"brain_id": item["brain_id"], "content": item["content"][:1000]}
+        compact = [{"brain_id": item["brain_id"], "content": item["content"][:800]}
                    for item in results]
         messages = [
             {"role": "system", "content": (
