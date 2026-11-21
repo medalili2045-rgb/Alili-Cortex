@@ -38,8 +38,13 @@ class Default(WorkerEntrypoint):
 
         ai_binding = getattr(env, "AI", None)
         ai_run = getattr(ai_binding, "run", None) if ai_binding is not None else None
+        async def async_ai_run(selected_model, payload):
+            if not callable(ai_run):
+                raise RuntimeError("workers_ai_binding_missing")
+            return _plain(await ai_run(selected_model, payload))
+
         model = CloudflareWorkersAIModelClient(
-            ai_run,
+            async_ai_run,
             model_id,
             free_confirmed=free_confirmed,
         )
@@ -144,6 +149,13 @@ class Default(WorkerEntrypoint):
             except (ValueError, TypeError) as exc:
                 return self._json(400, {"ok": False, "error": str(exc)})
             except Exception as exc:
+                try:
+                    if "dispatch_id" in locals():
+                        await store.update_brain_dispatch(
+                            dispatch_id, "failed", error_code=type(exc).__name__
+                        )
+                except Exception:
+                    pass
                 return self._json(500, {
                     "ok": False,
                     "error": "dispatch_failed",
