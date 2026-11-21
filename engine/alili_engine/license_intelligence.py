@@ -192,7 +192,7 @@ def analyze_license_expression(expression: str | None) -> dict:
         classification = "custom_or_document_reference"
     elif "unknown" in classes:
         classification = "unknown"
-    elif "CC-licenses" in classes:
+    elif "creative_commons_non_software" in classes:
         classification = "non_software_license"
     else:
         classification = evaluated["risk"]
