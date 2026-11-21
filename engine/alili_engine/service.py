@@ -107,7 +107,9 @@ class EngineService:
                 "automatic_installation": False, "default_admission_status": "quarantined"}
 
     def analyze_dependency_licenses(self, dependency_report: dict) -> dict:
-        return self.license_intelligence.analyze(dependency_report)\n\n    def library_summary(self) -> dict:\n        return self.libraries.summary()
+        return self.license_intelligence.analyze(dependency_report)
+
+    def library_summary(self) -> dict:\n        return self.libraries.summary()
 
     def library_catalog(self, **kwargs) -> list[dict]:
         return self.libraries.list(**kwargs)
