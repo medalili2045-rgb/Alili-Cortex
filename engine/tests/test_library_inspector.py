@@ -51,7 +51,7 @@ class LibraryInspectorTests(unittest.TestCase):
             "starlette>=0.30; python_version > '3.9'",
             "pydantic>=2",
             "starlette>=0.30; python_version > '3.9'",
-            "not a valid requirement !!!",
+            "!!! not a valid requirement",
         ])
         self.assertEqual(len(result), 2)
         self.assertEqual({item["name"] for item in result},
