@@ -128,6 +128,22 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(saved["plan"]["execution_status"], "capability_not_implemented")
 
 
+    def test_license_intelligence_api_is_authenticated_and_never_approves_or_installs(self):
+        headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
+        with urlopen(Request(self.base + "/v1/license-intelligence/status", headers=headers)) as response:
+            status = json.loads(response.read())
+        self.assertFalse(status["license_intelligence"]["automatic_approval"])
+        payload = {"dependency_report": {"nodes": [
+            {"name": "safe-candidate", "version": "1.0", "root": True,
+             "resolution_status": "resolved", "license": {"expression": "MIT"}}]}}
+        request = Request(self.base + "/v1/license-intelligence/analyze", data=json.dumps(payload).encode(), headers=headers, method="POST")
+        with urlopen(request) as response:
+            result = json.loads(response.read())
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["report"]["summary"]["all_packages_quarantined"])
+        self.assertEqual(result["report"]["summary"]["approval_count"], 0)
+        self.assertEqual(result["report"]["summary"]["install_enabled_count"], 0)
+
     def test_provider_catalog_api_is_authenticated_and_reports_no_connections(self):
         headers = {"Authorization": "Bearer " + self.token}
         with urlopen(Request(self.base + "/v1/providers", headers=headers)) as response:
