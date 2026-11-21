@@ -166,6 +166,21 @@ class ApiTests(unittest.TestCase):
         self.assertFalse(status["evolution"]["automatic_creation"])
         self.assertFalse(status["evolution"]["automatic_brain_activation"])
 
+    def test_brain_runtime_api_is_authenticated_and_fails_closed_without_local_model(self):
+        headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
+        with urlopen(Request(self.base + "/v1/brains/runtime", headers=headers)) as response:
+            runtime = json.loads(response.read())["runtime"]
+        self.assertEqual(runtime["status"], "unconfigured")
+        request = Request(self.base + "/v1/brains/dispatch",
+                          data=json.dumps({"objective": "Research and code a safe application"}).encode(),
+                          headers=headers, method="POST")
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(request)
+        self.assertEqual(caught.exception.code, 503)
+        payload = json.loads(caught.exception.read())
+        self.assertFalse(payload["dispatch"]["dispatched"])
+        self.assertEqual(payload["dispatch"]["hosted_fallback"], "disabled")
+
     def test_knowledge_scout_api_is_authenticated_and_quarantine_first(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
         with urlopen(Request(self.base + "/v1/knowledge-scout/status", headers=headers)) as response:
