@@ -103,7 +103,11 @@ class EngineService:
         return self.providers.summary()
 
     def license_intelligence_status(self) -> dict:
-        return {\"available\": True, \"version\": \"1.0.0\", \"automatic_approval\": False,\n                \"automatic_installation\": False, \"default_admission_status\": \"quarantined\"}\n\n    def analyze_dependency_licenses(self, dependency_report: dict) -> dict:\n        return self.license_intelligence.analyze(dependency_report)\n\n    def library_summary(self) -> dict:\n        return self.libraries.summary()
+        return {"available": True, "version": "1.0.0", "automatic_approval": False,
+                "automatic_installation": False, "default_admission_status": "quarantined"}
+
+    def analyze_dependency_licenses(self, dependency_report: dict) -> dict:
+        return self.license_intelligence.analyze(dependency_report)\n\n    def library_summary(self) -> dict:\n        return self.libraries.summary()
 
     def library_catalog(self, **kwargs) -> list[dict]:
         return self.libraries.list(**kwargs)
