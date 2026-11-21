@@ -64,17 +64,20 @@ class TaskStore:
                               *, status: str = "queued") -> dict:
         if not isinstance(dispatch_id, str) or not dispatch_id.startswith("ac-dispatch-"):
             raise ValueError("invalid_dispatch_id")
-        if not isinstance(objective, str) or not objective.strip() or len(objective) > 6000:
+        if not isinstance(objective, str) or not objective.strip() or len(objective) > 4000:
             raise ValueError("invalid_dispatch_objective")
         if not isinstance(plan, dict):
             raise ValueError("invalid_dispatch_plan")
+        encoded_plan = json.dumps(plan, ensure_ascii=False)
+        if len(encoded_plan) > 100_000:
+            raise ValueError("dispatch_plan_too_large")
         now = utc_now()
         with closing(self._connect()) as db, db:
             db.execute(
                 """INSERT INTO brain_dispatches
                    (dispatch_id, created_at, updated_at, status, objective, plan_json)
                    VALUES (?, ?, ?, ?, ?, ?)""",
-                (dispatch_id, now, now, status, objective, json.dumps(plan, ensure_ascii=False)),
+                (dispatch_id, now, now, status, objective, encoded_plan),
             )
         return self.get_brain_dispatch(dispatch_id)
 
