@@ -50,6 +50,7 @@ def main():
         "/v1/models": "models",
         "/v1/model/status": "model",
         "/v1/cloud/status": "cloud",
+        "/v1/libraries": "libraries",
     }
     for path, key in checks.items():
         status, payload = request(path)
@@ -78,7 +79,7 @@ def main():
         "checks": [
             "live_http_health", "authentication_gate", "capability_registry",
             "brain_registry", "model_registry", "model_status",
-            "cloud_fail_closed", "task_create_and_read", "execution_boundary_honest"
+            "cloud_fail_closed", "library_registry_quarantined", "task_create_and_read", "execution_boundary_honest"
         ],
         "model_runtime": model["model"]["status"],
         "software_execution": software["task"]["plan"]["execution_status"],
