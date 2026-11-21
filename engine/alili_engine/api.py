@@ -229,6 +229,8 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(200, {"ok": True, "proposals": items})
             if path == "/v1/brains":
                 return self._send(200, {"ok": True, **service.brains()})
+            if path == "/v1/brains/runtime":
+                return self._send(200, {"ok": True, "runtime": service.brain_runtime_status()})
             if path == "/v1/models":
                 return self._send(200, {"ok": True, "family": service.model_family(),
                                         "models": service.list_models()})
@@ -385,7 +387,7 @@ def create_handler(service: EngineService, expected_token: str):
             path = urlsplit(self.path).path
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
-            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/brains/plan", "/v1/knowledge", "/v1/execution/run", "/v1/libraries", "/v1/license-intelligence/analyze",
+            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/brains/plan", "/v1/brains/dispatch", "/v1/knowledge", "/v1/execution/run", "/v1/libraries", "/v1/license-intelligence/analyze",
                        "/v1/training/runs", "/v1/training/preflight",
                        "/v1/study/evidence", "/v1/study/sessions",
                        "/v1/connectors/fetch", "/v1/links",
@@ -585,6 +587,25 @@ def create_handler(service: EngineService, expected_token: str):
                 if not isinstance(user_input, str) or not user_input.strip() or len(user_input) > MAX_INPUT_CHARS:
                     return self._send(400, {"ok": False, "error": "invalid_task_input"})
                 return self._send(202, {"ok": True, "task": service.create_task(user_input.strip())})
+
+            if path == "/v1/brains/dispatch":
+                objective = body.get("objective")
+                try:
+                    plan = service.plan_brains(
+                        objective, requested_brains=body.get("requested_brains"),
+                        max_brains=body.get("max_brains", 6))
+                    result = service.dispatch_brains(
+                        plan, temperature=body.get("temperature", 0.2),
+                        max_tokens=body.get("max_tokens", 512))
+                except ValueError as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                status_code = (503 if result.get("status") == "blocked" else
+                               207 if result.get("status") == "partial_failure" else
+                               200 if result.get("status") == "completed" else 202)
+                return self._send(status_code, {
+                    "ok": result.get("status") == "completed",
+                    "plan": plan, "dispatch": result,
+                })
 
             if path == "/v1/brains/plan":
                 objective = body.get("objective")
