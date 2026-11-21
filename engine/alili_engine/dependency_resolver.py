@@ -227,9 +227,20 @@ class DependencyResolver:
                 continue
             info = metadata.get("info") or {}
             version = info.get("version")
-            if not isinstance(version, str) or not version:
-                nodes[key] = {"name": name, "resolution_status": "version_missing",
-                              "version": None, "license": {"status": "unknown"}}
+            parsed_version = _version_tuple(version) if isinstance(version, str) else None
+            if parsed_version is None or parsed_version[1] != 3:
+                nodes[key] = {"name": name, "resolution_status": "latest_release_not_stable_or_unsupported",
+                              "version": version if isinstance(version, str) else None,
+                              "license": {"status": "unknown"},
+                              "admission_status": "quarantined", "install_enabled": False}
+                errors.append({"package": name, "error": "stable_release_not_confirmed"})
+                continue
+            returned_name = info.get("name")
+            if isinstance(returned_name, str) and normalize_name(returned_name) != key:
+                nodes[key] = {"name": name, "resolution_status": "package_identity_mismatch",
+                              "version": None, "license": {"status": "unknown"},
+                              "admission_status": "quarantined", "install_enabled": False}
+                errors.append({"package": name, "error": "package_identity_mismatch"})
                 continue
             license_expression = info.get("license_expression")
             license_text = info.get("license")
