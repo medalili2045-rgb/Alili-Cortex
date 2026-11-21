@@ -1,7 +1,7 @@
 # AC Dependency Resolver v1
 
 ## Purpose
-Build a transitive dependency graph for the curated AC Python library candidates, pin metadata versions, record package license declarations and artifact hashes, and query OSV for each resolved package.
+Build a transitive dependency graph for the curated AC Python library candidates, accept only a stable latest PyPI metadata version, record package license declarations and artifact hashes, and query OSV for each resolved package.
 
 ## Safety and limits
 - Metadata-only: no distribution download, install, import, or code execution.
@@ -38,7 +38,7 @@ PYTHONPATH=engine python -m scripts.resolve_library_dependencies --max-nodes 100
 Default report: \`engine/data/dependency_resolution_report.json\`.
 
 ## Meaning of a fully resolved graph
-A fully resolved graph means every encountered package has a metadata version that satisfies the supported constraints and the node limit was not exceeded. It does not mean packages are secure, compatible, legally approved, or installed.
+A fully resolved graph means every encountered package has a stable metadata version that satisfies the supported constraints, the package identity matches PyPI metadata, and the node limit was not exceeded. It does not mean packages are secure, compatible, legally approved, or installed.
 
 ## Next gates
 1. Resolve unsupported PEP 440 constraints with a standards-compliant resolver.
