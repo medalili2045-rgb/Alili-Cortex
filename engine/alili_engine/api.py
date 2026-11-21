@@ -549,6 +549,18 @@ def create_handler(service: EngineService, expected_token: str):
                     return self._send(400, {"ok": False, "error": "invalid_task_input"})
                 return self._send(202, {"ok": True, "task": service.create_task(user_input.strip())})
 
+            if path == "/v1/brains/plan":
+                objective = body.get("objective")
+                requested_brains = body.get("requested_brains")
+                max_brains = body.get("max_brains", 6)
+                try:
+                    plan = service.plan_brains(objective, requested_brains=requested_brains,
+                                               max_brains=max_brains)
+                except ValueError as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(202, {"ok": True, "plan": plan,
+                                        "notice": "delegation_plan_only_no_model_or_tool_dispatch"})
+
             if path == "/v1/route":
                 task_type = body.get("task_type")
                 if not isinstance(task_type, str) or not task_type.strip() or len(task_type) > 100:
