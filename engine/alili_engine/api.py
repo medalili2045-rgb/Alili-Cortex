@@ -385,6 +385,8 @@ def create_handler(service: EngineService, expected_token: str):
 
         def do_POST(self):
             path = urlsplit(self.path).path
+            if path == "/v1/brains/dispatch":
+                self.connection.settimeout(300)
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
             allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/brains/plan", "/v1/brains/dispatch", "/v1/knowledge", "/v1/execution/run", "/v1/libraries", "/v1/license-intelligence/analyze",
