@@ -1,0 +1,25 @@
+name = "ac-cortex-python-runtime"
+main = "src/entry.py"
+compatibility_date = "2026-11-21"
+compatibility_flags = ["python_workers"]
+workers_dev = true
+
+[vars]
+AC_RUNTIME_VERSION = "0.1.0"
+AC_RUNTIME_INFERENCE_ENABLED = "false"
+AC_FREE_CLOUDFLARE_AI_CONFIRMED = "false"
+
+[[d1_databases]]
+binding = "AC_DB"
+database_name = "alili-cortex-worker-state"
+database_id = "a5e946a9-ef89-4336-a589-6407820eb13d"
+migrations_dir = "migrations"
+
+[ai]
+binding = "AI"
+
+# Configure the secret out-of-band; never commit or paste it into source:
+# uv run pywrangler secret put AC_ENGINE_API_KEY
+#
+# This is a NEW Worker name. It does not replace alili-cortex or alili-cortex-api.
+# Do not deploy until account billing/no-card eligibility and free quotas are verified.
