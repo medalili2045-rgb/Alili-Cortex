@@ -1,0 +1,647 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "ac-python-foundation-2026-01",
+  "policy": {
+    "free_only": true,
+    "paid_services_allowed": false,
+    "bank_card_required": false,
+    "automatic_installation": false,
+    "automatic_approval": false,
+    "default_admission_status": "quarantined",
+    "version_policy": "resolve_latest_stable_then_pin_exact_version_and_hash",
+    "license_policy": "verify_upstream_license_and_all_transitive_dependencies_before_approval",
+    "note": "Declared license labels are discovery hints only; they are not legal approval."
+  },
+  "candidates": [
+    {
+      "library_id": "py-fastapi",
+      "package_name": "fastapi",
+      "display_name": "FastAPI",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/fastapi/fastapi",
+      "license_id": "MIT",
+      "license_evidence_url": "https://github.com/fastapi/fastapi/blob/master/LICENSE",
+      "domains": [
+        "application"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "Build authenticated APIs and app backends",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-pydantic",
+      "package_name": "pydantic",
+      "display_name": "Pydantic",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/pydantic/pydantic",
+      "license_id": "MIT",
+      "license_evidence_url": "https://github.com/pydantic/pydantic/blob/main/LICENSE",
+      "domains": [
+        "validation"
+      ],
+      "brains": [
+        "reasoning"
+      ],
+      "purpose": "Typed validation and structured model outputs",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-numpy",
+      "package_name": "numpy",
+      "display_name": "NumPy",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/numpy/numpy",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/numpy/numpy/blob/main/LICENSE.txt",
+      "domains": [
+        "numerical"
+      ],
+      "brains": [
+        "science"
+      ],
+      "purpose": "Numerical arrays and tensor foundations",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-scipy",
+      "package_name": "scipy",
+      "display_name": "SciPy",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/scipy/scipy",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/scipy/scipy/blob/main/LICENSE.txt",
+      "domains": [
+        "scientific"
+      ],
+      "brains": [
+        "science"
+      ],
+      "purpose": "Scientific algorithms and optimization",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-pandas",
+      "package_name": "pandas",
+      "display_name": "pandas",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/pandas-dev/pandas",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/pandas-dev/pandas/blob/main/LICENSE",
+      "domains": [
+        "data"
+      ],
+      "brains": [
+        "research"
+      ],
+      "purpose": "Data ingestion and analysis",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-scikit-learn",
+      "package_name": "scikit-learn",
+      "display_name": "scikit-learn",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/scikit-learn/scikit-learn",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/scikit-learn/scikit-learn/blob/main/COPYING",
+      "domains": [
+        "machine-learning"
+      ],
+      "brains": [
+        "science"
+      ],
+      "purpose": "Classical machine learning and evaluation",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-sympy",
+      "package_name": "sympy",
+      "display_name": "SymPy",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/sympy/sympy",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/sympy/sympy/blob/master/LICENSE",
+      "domains": [
+        "symbolic-math"
+      ],
+      "brains": [
+        "reasoning"
+      ],
+      "purpose": "Symbolic mathematics and algebra",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-requests",
+      "package_name": "requests",
+      "display_name": "Requests",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/psf/requests",
+      "license_id": "Apache-2.0",
+      "license_evidence_url": "https://github.com/psf/requests/blob/main/LICENSE",
+      "domains": [
+        "networking"
+      ],
+      "brains": [
+        "research"
+      ],
+      "purpose": "HTTP client for controlled research ingestion",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-httpx",
+      "package_name": "httpx",
+      "display_name": "HTTPX",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/encode/httpx",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/encode/httpx/blob/master/LICENSE.md",
+      "domains": [
+        "networking"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "Async and sync HTTP client",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-pytest",
+      "package_name": "pytest",
+      "display_name": "pytest",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/pytest-dev/pytest",
+      "license_id": "MIT",
+      "license_evidence_url": "https://github.com/pytest-dev/pytest/blob/main/LICENSE",
+      "domains": [
+        "testing"
+      ],
+      "brains": [
+        "code"
+      ],
+      "purpose": "Test framework for validation gates",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-ruff",
+      "package_name": "ruff",
+      "display_name": "Ruff",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/astral-sh/ruff",
+      "license_id": "MIT",
+      "license_evidence_url": "https://github.com/astral-sh/ruff/blob/main/LICENSE",
+      "domains": [
+        "quality"
+      ],
+      "brains": [
+        "code"
+      ],
+      "purpose": "Fast Python linting and formatting",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-sqlalchemy",
+      "package_name": "sqlalchemy",
+      "display_name": "SQLAlchemy",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/sqlalchemy/sqlalchemy",
+      "license_id": "MIT",
+      "license_evidence_url": "https://github.com/sqlalchemy/sqlalchemy/blob/main/LICENSE",
+      "domains": [
+        "database"
+      ],
+      "brains": [
+        "memory"
+      ],
+      "purpose": "Database abstraction and ORM",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-jinja2",
+      "package_name": "jinja2",
+      "display_name": "Jinja",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/pallets/jinja",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/pallets/jinja/blob/main/LICENSE.txt",
+      "domains": [
+        "templating"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "Safe templating with sandbox review required",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-pyyaml",
+      "package_name": "pyyaml",
+      "display_name": "PyYAML",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/yaml/pyyaml",
+      "license_id": "MIT",
+      "license_evidence_url": "https://github.com/yaml/pyyaml/blob/main/LICENSE",
+      "domains": [
+        "serialization"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "YAML parsing and configuration",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-transformers",
+      "package_name": "transformers",
+      "display_name": "Transformers",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/huggingface/transformers",
+      "license_id": "Apache-2.0",
+      "license_evidence_url": "https://github.com/huggingface/transformers/blob/main/LICENSE",
+      "domains": [
+        "model-tooling"
+      ],
+      "brains": [
+        "reasoning"
+      ],
+      "purpose": "Model architecture and tokenizer integrations",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-tokenizers",
+      "package_name": "tokenizers",
+      "display_name": "Tokenizers",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/huggingface/tokenizers",
+      "license_id": "Apache-2.0",
+      "license_evidence_url": "https://github.com/huggingface/tokenizers/blob/main/LICENSE",
+      "domains": [
+        "model-tooling"
+      ],
+      "brains": [
+        "language"
+      ],
+      "purpose": "Fast tokenization infrastructure",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-safetensors",
+      "package_name": "safetensors",
+      "display_name": "Safetensors",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/huggingface/safetensors",
+      "license_id": "Apache-2.0",
+      "license_evidence_url": "https://github.com/huggingface/safetensors/blob/main/LICENSE",
+      "domains": [
+        "model-tooling"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "Safer tensor serialization format",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-sentence-transformers",
+      "package_name": "sentence-transformers",
+      "display_name": "Sentence Transformers",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/UKPLab/sentence-transformers",
+      "license_id": "Apache-2.0",
+      "license_evidence_url": "https://github.com/UKPLab/sentence-transformers/blob/master/LICENSE",
+      "domains": [
+        "embeddings"
+      ],
+      "brains": [
+        "memory"
+      ],
+      "purpose": "Embedding and semantic retrieval models",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-datasets",
+      "package_name": "datasets",
+      "display_name": "Datasets",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/huggingface/datasets",
+      "license_id": "Apache-2.0",
+      "license_evidence_url": "https://github.com/huggingface/datasets/blob/main/LICENSE",
+      "domains": [
+        "data"
+      ],
+      "brains": [
+        "research"
+      ],
+      "purpose": "Dataset loading and processing",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-starlette",
+      "package_name": "starlette",
+      "display_name": "Starlette",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/encode/starlette",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/encode/starlette/blob/master/LICENSE.md",
+      "domains": [
+        "application"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "ASGI toolkit used in app services",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    },
+    {
+      "library_id": "py-uvicorn",
+      "package_name": "uvicorn",
+      "display_name": "Uvicorn",
+      "ecosystem": "pypi",
+      "version": "unresolved",
+      "version_policy": "latest_stable_at_review",
+      "source_url": "https://github.com/encode/uvicorn",
+      "license_id": "BSD-3-Clause",
+      "license_evidence_url": "https://github.com/encode/uvicorn/blob/master/LICENSE.md",
+      "domains": [
+        "application"
+      ],
+      "brains": [
+        "execution"
+      ],
+      "purpose": "ASGI server for Python applications",
+      "admission_status": "quarantined",
+      "source_commit": null,
+      "artifact_sha256": null,
+      "account_or_payment_required": false,
+      "install_enabled": false,
+      "review_required": [
+        "verify_exact_release_license",
+        "verify_dependency_licenses",
+        "resolve_and_pin_version",
+        "security_advisory_review",
+        "runtime_compatibility_test"
+      ]
+    }
+  ]
+}

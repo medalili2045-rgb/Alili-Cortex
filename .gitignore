@@ -1,0 +1,28 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Android / signing secrets
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# Cloudflare / Node local files
+worker/.dev.vars
+worker/node_modules/
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

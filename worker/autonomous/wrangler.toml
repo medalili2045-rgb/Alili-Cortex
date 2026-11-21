@@ -1,0 +1,16 @@
+name = "alili-cortex-autonomous-worker"
+main = "src/index.js"
+compatibility_date = "2026-11-21"
+workers_dev = true
+
+[[d1_databases]]
+binding = "AC_STATE"
+database_name = "alili-cortex-worker-state"
+database_id = "a5e946a9-ef89-4336-a589-6407820eb13d"
+
+[[services]]
+binding = "AC_API"
+service = "alili-cortex"
+
+[triggers]
+crons = ["15 0 * * *"]

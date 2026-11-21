@@ -1,0 +1,16 @@
+name = "alili-cortex-api"
+main = "src/index.js"
+compatibility_date = "2026-11-19"
+workers_dev = true
+
+[vars]
+CORS_ORIGINS = ""
+GEMINI_MODEL = "gemini-2.5-flash"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
+CF_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+
+# Add secrets with: npx wrangler secret put APP_API_KEY
+# Provider API keys must be stored as Worker secrets, never in Flutter or Git.
+# FREE_*_CONFIRMED flags default to false and must be explicitly set to "true"
+# only after checking the provider's current terms and limits.
