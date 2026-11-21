@@ -26,7 +26,7 @@ From the `engine/` directory:
 
 ```sh
 uv run python -m unittest discover -s tests -v
-uv run pywrangler dev --config wrangler.toml
+uvx --from workers-py pywrangler dev --config wrangler.toml
 ```
 
 The preview health route is `GET /health`. Authenticated routes:
