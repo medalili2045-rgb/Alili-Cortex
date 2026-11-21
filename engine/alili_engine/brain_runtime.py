@@ -18,7 +18,7 @@ class BrainDispatchError(ValueError):
 class ACBrianRuntime:
     VERSION = "1.0.0"
     MAX_ASSIGNMENTS = 8
-    MAX_OBJECTIVE_CHARS = 8_000
+    MAX_OBJECTIVE_CHARS = 6_000
     MAX_OUTPUT_CHARS = 12_000
     MAX_WORKERS = 4
 
