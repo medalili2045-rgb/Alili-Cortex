@@ -34,7 +34,12 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
     def process_request(self, request, client_address):
         if not self._request_slots.acquire(blocking=False):
             try:
-                request.sendall(b"HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\nContent-Length: 0\r\nRetry-After: 1\r\n\r\n")
+                request.sendall(b"HTTP/1.1 503 Service Unavailable\r
+Connection: close\r
+Content-Length: 0\r
+Retry-After: 1\r
+\r
+")
             except OSError:
                 pass
             self.shutdown_request(request)
@@ -132,7 +137,9 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(200, {"ok": True, "service": "alili-cortex-engine", "version": "0.6.0"})
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
-            if path == "/v1/execution/status":\n                return self._send(200, {"ok": True, "execution": service.execution_status()})\n            if path == "/v1/cloud/status":
+            if path == "/v1/execution/status":
+                return self._send(200, {"ok": True, "execution": service.execution_status()})
+            if path == "/v1/cloud/status":
                 return self._send(200, {"ok": True, "cloud": service.cloud_status()})
             if path == "/v1/cloud/plan":
                 query = parse_qs(parsed.query)
@@ -352,7 +359,17 @@ def create_handler(service: EngineService, expected_token: str):
                 except ValueError as exc:
                     return self._send(400, {"ok": False, "error": str(exc)})
                 return self._send(200, {"ok": True, "evaluation": result})
-            if path == "/v1/execution/run":\n                code = body.get("code")\n                input_text = body.get("input_text", "")\n                try:\n                    result = service.execute_python(code, input_text=input_text)\n                except ExecutionRejected as exc:\n                    return self._send(400, {"ok": False, "error": str(exc)})\n                status = 200 if result.get("ok") else 422 if result.get("status") == "rejected" else 503 if result.get("status") == "unavailable" else 408 if result.get("status") == "timeout" else 500\n                return self._send(status, {"ok": result.get("ok", False), "execution": result})\n\n            if path == "/v1/generate":
+            if path == "/v1/execution/run":
+                code = body.get("code")
+                input_text = body.get("input_text", "")
+                try:
+                    result = service.execute_python(code, input_text=input_text)
+                except ExecutionRejected as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                status = 200 if result.get("ok") else 422 if result.get("status") == "rejected" else 503 if result.get("status") == "unavailable" else 408 if result.get("status") == "timeout" else 500
+                return self._send(status, {"ok": result.get("ok", False), "execution": result})
+
+            if path == "/v1/generate":
                 messages, temperature, max_tokens = body.get("messages"), body.get("temperature", 0.2), body.get("max_tokens", 512)
                 if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
                     return self._send(400, {"ok": False, "error": "invalid_temperature"})
