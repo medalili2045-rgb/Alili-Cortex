@@ -70,6 +70,20 @@ class StoreAndServiceTests(unittest.TestCase):
         self.assertEqual(task["plan"]["execution_status"], "capability_not_implemented")
         self.assertNotEqual(task["status"], "completed")
 
+    def test_brain_dispatch_history_survives_store_reinitialization(self):
+        dispatch_id = "ac-dispatch-persistence-test"
+        plan = {"objective": "test persistence", "assignments": []}
+        self.store.create_brain_dispatch(dispatch_id, "test persistence", plan)
+        self.store.update_brain_dispatch(
+            dispatch_id, "blocked",
+            result={"dispatch_id": dispatch_id, "status": "blocked"})
+        reopened = TaskStore(os.path.join(self.temp.name, "tasks.sqlite3"))
+        saved = reopened.get_brain_dispatch(dispatch_id)
+        self.assertEqual(saved["status"], "blocked")
+        self.assertEqual(saved["result"]["dispatch_id"], dispatch_id)
+        self.assertEqual(reopened.list_brain_dispatches(status="blocked")[0]["dispatch_id"],
+                         dispatch_id)
+
     def test_invalid_state_transition_is_rejected(self):
         task = self.store.create("طلب")
         self.store.transition(task["task_id"], "planning")
