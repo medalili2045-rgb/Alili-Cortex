@@ -59,7 +59,7 @@ for node in ast.walk(tree):
         raise ValueError("literal_too_large")
 output = []
 used = [0]
-def bounded_print(*values, sep=" ", end="\\n"):
+def bounded_print(*values, sep=" ", end="\n"):
     text = sep.join(str(v) for v in values) + end
     remaining = 16000 - used[0]
     if remaining <= 0:
