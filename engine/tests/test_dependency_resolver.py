@@ -92,6 +92,16 @@ class DependencyResolverTests(unittest.TestCase):
         self.assertEqual(shared["resolution_status"], "constraint_conflict")
         self.assertFalse(report["summary"]["fully_resolved"])
 
+    def test_prerelease_latest_fails_closed(self):
+        fake = FakeOpener([
+            {"info": {"name": "root-a", "version": "2.0.0rc1",
+                      "requires_dist": [], "license": "MIT"}, "urls": []}
+        ])
+        report = DependencyResolver(self.manifest, opener=fake).resolve(check_osv=False)
+        self.assertFalse(report["summary"]["fully_resolved"])
+        self.assertEqual(report["nodes"][0]["resolution_status"],
+                         "latest_release_not_stable_or_unsupported")
+
     def test_unapproved_host_rejected(self):
         with self.assertRaisesRegex(DependencyResolutionError, "endpoint_not_allowlisted"):
             _request_json("https://example.org/pypi/pkg/json", opener=FakeOpener([]))
