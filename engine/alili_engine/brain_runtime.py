@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
+import re
 from uuid import uuid4
 
 
@@ -17,7 +18,7 @@ class BrainDispatchError(ValueError):
 class ACBrianRuntime:
     VERSION = "1.0.0"
     MAX_ASSIGNMENTS = 8
-    MAX_OBJECTIVE_CHARS = 16_000
+    MAX_OBJECTIVE_CHARS = 8_000
     MAX_OUTPUT_CHARS = 12_000
     MAX_WORKERS = 4
 
@@ -171,7 +172,7 @@ class ACBrianRuntime:
         reviewer_id = "ac_reasoning"
         if self.brain_registry.get(reviewer_id) is None:
             return {"status": "blocked", "reason": "quality_reviewer_not_registered"}
-        compact = [{"brain_id": item["brain_id"], "content": item["content"][:6000]}
+        compact = [{"brain_id": item["brain_id"], "content": item["content"][:1000]}
                    for item in results]
         messages = [
             {"role": "system", "content": (
@@ -191,7 +192,8 @@ class ACBrianRuntime:
             content = response.get("content") if isinstance(response, dict) else None
             if not isinstance(content, str) or not content.strip():
                 return {"status": "failed", "reason": "empty_quality_review"}
-            verdict = "accepted" if "ACCEPT" in content.upper() and "NEEDS_REVISION" not in content.upper() else "needs_revision"
+            explicit_accept = re.search(r"(?im)^\\s*verdict\\s*:\\s*ACCEPT\\b", content) is not None
+            verdict = "accepted" if explicit_accept and "NEEDS_REVISION" not in content.upper() else "needs_revision"
             return {"status": "completed", "verdict": verdict,
                     "reviewer": reviewer_id, "content": content[:self.MAX_OUTPUT_CHARS],
                     "model": response.get("model", "local-model"), "source": "local"}
