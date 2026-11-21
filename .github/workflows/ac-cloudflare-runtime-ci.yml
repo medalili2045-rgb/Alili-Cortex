@@ -1,0 +1,31 @@
+name: AC Cloudflare Python Runtime CI
+
+on:
+  push:
+    branches: ["ac-*"]
+    paths:
+      - "engine/cloudflare_runtime/**"
+      - ".github/workflows/ac-cloudflare-runtime-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "engine/cloudflare_runtime/**"
+      - ".github/workflows/ac-cloudflare-runtime-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Compile adapter and tests
+        run: python -m compileall -q engine/cloudflare_runtime/src engine/cloudflare_runtime/tests
+      - name: Run fail-closed contract tests
+        working-directory: engine/cloudflare_runtime
+        run: python -m unittest discover -s tests -v
