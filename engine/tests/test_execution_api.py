@@ -41,14 +41,14 @@ class ExecutionApiTests(unittest.TestCase):
     def test_execution_endpoint_runs_restricted_python(self):
         request = Request(
             self.base + "/v1/execution/run",
-            data=json.dumps({"code": "total = sum(range(5))\\nprint(total)"}).encode(),
+            data=json.dumps({"code": "total = sum(range(5))\nprint(total)"}).encode(),
             headers=self.headers,
             method="POST",
         )
         with urlopen(request) as response:
             payload = json.loads(response.read())
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["execution"]["stdout"], "10\\n")
+        self.assertEqual(payload["execution"]["stdout"], "10\n")
 
     def test_execution_endpoint_rejects_imports(self):
         request = Request(
