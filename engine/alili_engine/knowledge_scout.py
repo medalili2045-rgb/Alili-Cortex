@@ -24,7 +24,12 @@ _BRAINS = {
 _DOMAINS = {
     "software", "artificial_intelligence", "mathematics", "science",
     "engineering", "databases", "cloud", "security_defense", "research",
-    "languages", "education", "robotics", "design",
+    "languages", "education", "robotics", "design", "biology", "medicine",
+    "chemistry", "physics", "astronomy", "geography", "history", "economics",
+    "law", "public_policy", "environment", "climate", "energy", "agriculture",
+    "manufacturing", "electronics", "telecommunications", "transportation",
+    "aerospace", "materials", "humanities", "ethics", "accessibility",
+    "productivity", "business", "operations", "open_data", "standards",
 }
 _MAX_NOTE_CHARS = 12_000
 
@@ -113,7 +118,9 @@ class KnowledgeScout:
             raise ValueError("invalid_source_name")
         safe_url = validate_public_https_url(base_url)
         if source_type not in {"official_docs", "open_access_research", "public_repository",
-                               "educational_resource", "public_dataset"}:
+                               "educational_resource", "public_dataset", "standards_body",
+                               "government_open_data", "academic_repository",
+                               "open_courseware", "security_advisory", "open_source_project"}:
             raise ValueError("unsupported_source_type")
         if not isinstance(domains, list) or not domains or not set(domains) <= _DOMAINS:
             raise ValueError("invalid_source_domains")
