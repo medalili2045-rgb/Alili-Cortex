@@ -1,6 +1,7 @@
 """Application service coordinating the independent AC engine components."""
 
 import sqlite3
+import uuid
 from contextlib import closing
 
 from .brains import BrainRegistry, BrainRouter
@@ -77,7 +78,29 @@ class EngineService:
         return self.brain_runtime.status()
 
     def dispatch_brains(self, plan: dict, *, temperature: float = 0.2, max_tokens: int = 512) -> dict:
-        return self.brain_runtime.dispatch(plan, temperature=temperature, max_tokens=max_tokens)
+        if not isinstance(plan, dict) or not isinstance(plan.get("objective"), str):
+            return self.brain_runtime.dispatch(plan, temperature=temperature, max_tokens=max_tokens)
+        dispatch_id = "ac-dispatch-" + uuid.uuid4().hex[:20]
+        self.store.create_brain_dispatch(dispatch_id, plan["objective"], plan)
+        self.store.update_brain_dispatch(dispatch_id, "running")
+        try:
+            result = self.brain_runtime.dispatch(
+                plan, temperature=temperature, max_tokens=max_tokens,
+                dispatch_id=dispatch_id)
+            self.store.update_brain_dispatch(
+                dispatch_id, result["status"], result=result,
+                error_code=result.get("reason"))
+            return result
+        except Exception as exc:
+            self.store.update_brain_dispatch(
+                dispatch_id, "failed", error_code=type(exc).__name__)
+            raise
+
+    def get_brain_dispatch(self, dispatch_id: str) -> dict | None:
+        return self.store.get_brain_dispatch(dispatch_id)
+
+    def list_brain_dispatches(self, *, status=None, limit=50) -> list[dict]:
+        return self.store.list_brain_dispatches(status=status, limit=limit)
 
     def route(self, task_type: str) -> dict:
         return self.brain_router.route(task_type).to_dict()
