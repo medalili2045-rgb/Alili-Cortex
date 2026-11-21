@@ -25,6 +25,7 @@ from .execution_sandbox import ACExecutionSandbox
 from .library_foundry import LibraryFoundry
 from .license_intelligence import LicenseIntelligence
 from .knowledge_scout import KnowledgeScout
+from .knowledge_scout_navigator import KnowledgeScoutNavigator
 
 
 class EngineService:
@@ -53,6 +54,7 @@ class EngineService:
         self.libraries = library_foundry or LibraryFoundry(store.database_path)
         self.license_intelligence = LicenseIntelligence()
         self.knowledge_scout = KnowledgeScout(store.database_path)
+        self.knowledge_scout_navigator = KnowledgeScoutNavigator(self.knowledge_scout, self.connectors)
 
     def capabilities(self) -> dict:
         return {"policy": "free_first_no_paid_fallback", "capabilities": self.registry.all()}
@@ -341,6 +343,9 @@ class EngineService:
 
     def scout_proposals(self, *, status=None, limit=50) -> list[dict]:
         return self.knowledge_scout.list_proposals(status=status, limit=limit)
+
+    def discover_scout_knowledge(self, **kwargs) -> dict:
+        return self.knowledge_scout_navigator.discover(**kwargs)
 
     def get_task(self, task_id: str) -> dict | None:
         return self.store.get(task_id)
