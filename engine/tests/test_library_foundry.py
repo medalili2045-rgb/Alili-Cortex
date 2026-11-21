@@ -41,6 +41,7 @@ class LibraryFoundryTests(unittest.TestCase):
             "evidence_ref": "https://github.com/numpy/numpy/blob/main/LICENSE.txt",
         })
         self.assertEqual(item["status"], "approved")
+        self.assertIn("AC reviewer", item["review_notes"])
 
     def test_unknown_license_cannot_be_approved(self):
         item = self.register(license_id="UNKNOWN")
