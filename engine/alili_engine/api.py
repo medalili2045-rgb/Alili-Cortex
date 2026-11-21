@@ -385,7 +385,7 @@ def create_handler(service: EngineService, expected_token: str):
             path = urlsplit(self.path).path
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
-            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/knowledge", "/v1/execution/run", "/v1/libraries", "/v1/license-intelligence/analyze",
+            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/brains/plan", "/v1/knowledge", "/v1/execution/run", "/v1/libraries", "/v1/license-intelligence/analyze",
                        "/v1/training/runs", "/v1/training/preflight",
                        "/v1/study/evidence", "/v1/study/sessions",
                        "/v1/connectors/fetch", "/v1/links",
