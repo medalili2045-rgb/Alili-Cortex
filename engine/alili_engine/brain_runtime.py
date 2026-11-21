@@ -192,7 +192,7 @@ class ACBrianRuntime:
             content = response.get("content") if isinstance(response, dict) else None
             if not isinstance(content, str) or not content.strip():
                 return {"status": "failed", "reason": "empty_quality_review"}
-            explicit_accept = re.search(r"(?im)^\\s*verdict\\s*:\\s*ACCEPT\\b", content) is not None
+            explicit_accept = re.search(r"(?im)^\s*verdict\s*:\s*ACCEPT\b", content) is not None
             verdict = "accepted" if explicit_accept and "NEEDS_REVISION" not in content.upper() else "needs_revision"
             return {"status": "completed", "verdict": verdict,
                     "reviewer": reviewer_id, "content": content[:self.MAX_OUTPUT_CHARS],
