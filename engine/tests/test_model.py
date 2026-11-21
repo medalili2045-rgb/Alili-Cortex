@@ -146,6 +146,7 @@ class EngineGenerateApiTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.model_server = HTTPServer(("127.0.0.1", 0), _Handler)
         self.model_server.request_body = None
+        self.model_server.advertised_models = [{"id": "tiny-local-test", "object": "model"}]
         self.model_thread = threading.Thread(target=self.model_server.serve_forever, daemon=True)
         self.model_thread.start()
         client = LocalModelClient(f"http://127.0.0.1:{self.model_server.server_port}/v1", "tiny-local-test", timeout=2)
