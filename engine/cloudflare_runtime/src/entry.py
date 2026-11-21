@@ -1,7 +1,7 @@
 """Alili Cortex Cloudflare Python Worker adapter.
 
-This adapter is deliberately separate from the local threaded engine. It does not
-import subprocess/threading/resource-based sandbox code and never invokes Workers AI.
+This adapter is deliberately separate from the local engine. It does not import
+local process-management or operating-system sandbox modules and never invokes Workers AI.
 """
 import hmac
 import json
