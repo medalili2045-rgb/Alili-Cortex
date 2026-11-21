@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
+from .knowledge_scout import validate_public_https_url
 
 _SOURCE_WEIGHT = {"official_docs": 0.90, "standards_body": 1.0, "government_open_data": 0.95, "academic_repository": 0.90, "open_access_research": 0.90, "security_advisory": 0.95, "public_repository": 0.72, "open_source_project": 0.78, "educational_resource": 0.72, "open_courseware": 0.78, "public_dataset": 0.82}
 
@@ -21,10 +22,8 @@ class KnowledgeEvidenceEvaluator:
     @staticmethod
     def _host(url):
         if not isinstance(url, str) or len(url) > 2048: raise ValueError("invalid_evidence_url")
-        parsed = urlsplit(url)
-        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.port not in (None, 443):
-            raise ValueError("public_https_evidence_url_required")
-        return parsed.hostname.lower().rstrip(".")
+        safe_url = validate_public_https_url(url)
+        return urlsplit(safe_url).hostname.lower().rstrip(".")
 
     def evaluate(self, evidence, *, now=None):
         if not isinstance(evidence, list) or not evidence or len(evidence) > self.MAX_EVIDENCE: raise ValueError("evidence_count_out_of_range")
