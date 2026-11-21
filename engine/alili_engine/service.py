@@ -109,7 +109,8 @@ class EngineService:
     def analyze_dependency_licenses(self, dependency_report: dict) -> dict:
         return self.license_intelligence.analyze(dependency_report)
 
-    def library_summary(self) -> dict:\n        return self.libraries.summary()
+    def library_summary(self) -> dict:
+        return self.libraries.summary()
 
     def library_catalog(self, **kwargs) -> list[dict]:
         return self.libraries.list(**kwargs)
