@@ -274,9 +274,9 @@ class KnowledgeScout:
 
     def summary(self) -> dict:
         return {
-            "module": "AC Knowledge Scout", "version": "1.0.0",
-            "source_registry": "available", "network_fetch": "not_implemented",
-            "discovery_execution": "not_enabled", "scheduler": "queue_and_checkpoint_only",
+            "module": "AC Knowledge Scout", "version": "1.1.0",
+            "source_registry": "available", "network_fetch": "catalog_bound_dns_pinned_connector",
+            "discovery_execution": "on_demand", "scheduler": "queue_and_checkpoint_only",
             "continuous_uptime_guaranteed": False, "automatic_publication": False,
             "automatic_installation": False, "paid_services": "prohibited",
             "bank_card_required_services": "prohibited",
