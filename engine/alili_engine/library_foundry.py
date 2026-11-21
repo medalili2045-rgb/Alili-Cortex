@@ -63,7 +63,7 @@ class LibraryFoundry:
                 )
             """)
             db.execute("CREATE INDEX IF NOT EXISTS idx_ac_libraries_status ON ac_libraries(status)")
-            db.execute("CREATE INDEX IF NOT EXISTS idx_ac_libraries_hash ON ac_libraries(artifact_sha256)")
+            db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ac_libraries_hash_unique ON ac_libraries(artifact_sha256) WHERE artifact_sha256 IS NOT NULL")
 
     @staticmethod
     def fingerprint(data: bytes) -> dict:
@@ -86,6 +86,8 @@ class LibraryFoundry:
             raise ValueError("source_url_must_be_http")
         domains = domains or []
         brains = brains or []
+        if not isinstance(domains, list) or not isinstance(brains, list):
+            raise ValueError("domains_and_brains_must_be_lists")
         if not all(isinstance(x, str) and x.strip() for x in domains):
             raise ValueError("invalid_domains")
         if not all(x in _BRAINS for x in brains):
