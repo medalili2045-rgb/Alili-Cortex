@@ -55,3 +55,13 @@ The separate-process worker runs bounded source-study cycles immediately and the
 Install the engine from this directory and run `python -m alili_engine.autonomous_worker --once` for one cycle. Use `--status`, `--pause`, and `--resume` to inspect and control the scheduler.
 
 Fetched evidence remains quarantined with `review_required` license status. The worker does not self-approve licenses, publish knowledge, train model weights, install packages, or execute retrieved code.
+
+## AC Universal Library Foundry v1
+
+The engine now includes a persistent, quarantine-first library registry with version and provenance metadata, artifact SHA-256 fingerprinting, duplicate detection, domain and specialist-brain mapping, and artifact-scoped license review. Authenticated API:
+- GET /v1/libraries
+- GET /v1/libraries/{library_id}
+- POST /v1/libraries
+- POST /v1/libraries/{library_id}/review
+
+The registry does not download, install, import, or execute third-party code. New entries remain quarantined unless a supported license and explicit HTTPS evidence are reviewed. This is governance and metadata infrastructure, not a downloaded or installed library corpus. See ../docs/AC-UNIVERSAL-LIBRARY-FOUNDRY-v1.md.
