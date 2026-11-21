@@ -34,12 +34,7 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
     def process_request(self, request, client_address):
         if not self._request_slots.acquire(blocking=False):
             try:
-                request.sendall(b"HTTP/1.1 503 Service Unavailable\r
-Connection: close\r
-Content-Length: 0\r
-Retry-After: 1\r
-\r
-")
+                request.sendall(b"HTTP/1.1 503 Service Unavailable\\r\\nConnection: close\\r\\nContent-Length: 0\\r\\nRetry-After: 1\\r\\n\\r\\n")
             except OSError:
                 pass
             self.shutdown_request(request)
