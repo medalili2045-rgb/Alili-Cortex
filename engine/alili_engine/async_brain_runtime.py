@@ -119,7 +119,7 @@ class ACAsyncBrainRuntime:
         failures = {}
         for assignment, value in zip(plan["assignments"], settled):
             brain_id = assignment["brain_id"]
-            if isinstance(value, BaseException):
+            if isinstance(value, Exception):
                 failures[brain_id] = self._safe_error(value)
             else:
                 outputs[brain_id] = value
@@ -290,7 +290,7 @@ class ACAsyncBrainRuntime:
             return {"status": "failed", "reason": self._safe_error(exc)}
 
     @staticmethod
-    def _safe_error(error: BaseException) -> str:
+    def _safe_error(error: Exception) -> str:
         name = type(error).__name__
         message = str(error).strip().replace("\n", " ")[:240]
         return (name + (":" + message if message else ""))[:260]
