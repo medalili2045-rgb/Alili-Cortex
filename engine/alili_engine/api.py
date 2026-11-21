@@ -381,17 +381,28 @@ def create_handler(service: EngineService, expected_token: str):
                        "/v1/ai-observatory/studies", "/v1/ai-observatory/evaluate-response",
                        "/v1/knowledge-scout/sources", "/v1/knowledge-scout/jobs",
                        "/v1/knowledge-scout/proposals"}
+            is_scout_source_enable = path.startswith("/v1/knowledge-scout/sources/") and path.endswith("/enable")
             is_library_review = path.startswith("/v1/libraries/") and path.endswith("/review")
             is_knowledge_transition = path.startswith("/v1/knowledge/") and path.endswith("/transition")
             is_training_evaluation = path.startswith("/v1/training/runs/") and path.endswith("/evaluate")
             is_study_evaluation = path.startswith("/v1/study/sessions/") and path.endswith("/evaluate")
             is_study_knowledge_proposal = path.startswith("/v1/study/sessions/") and path.endswith("/propose-knowledge")
-            if path not in allowed and not is_library_review and not is_knowledge_transition and not is_training_evaluation and not is_study_evaluation and not is_study_knowledge_proposal:
+            if path not in allowed and not is_scout_source_enable and not is_library_review and not is_knowledge_transition and not is_training_evaluation and not is_study_evaluation and not is_study_knowledge_proposal:
                 return self._send(404, {"ok": False, "error": "not_found"})
             body, error = self._read_json()
             if error:
                 return self._send(error[0], {"ok": False, "error": error[1]})
 
+            if is_scout_source_enable:
+                source_id = path.removeprefix("/v1/knowledge-scout/sources/").removesuffix("/enable")
+                if not source_id or "/" in source_id:
+                    return self._send(404, {"ok": False, "error": "not_found"})
+                try:
+                    item = service.enable_scout_source(
+                        source_id, terms_evidence_url=body.get("terms_evidence_url"))
+                except (ValueError, TypeError, KeyError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(200, {"ok": True, "source": item})
             if path == "/v1/knowledge-scout/sources":
                 try:
                     item = service.register_scout_source(
