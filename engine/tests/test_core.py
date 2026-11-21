@@ -132,7 +132,7 @@ class ApiTests(unittest.TestCase):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
         with urlopen(Request(self.base + "/v1/knowledge-scout/status", headers=headers)) as response:
             status = json.loads(response.read())
-        self.assertEqual(status["scout"]["network_fetch"], "not_implemented")
+        self.assertEqual(status["scout"]["network_fetch"], "catalog_bound_dns_pinned_connector")
         payload = {"source_id": "python-docs", "name": "Python Docs",
                    "base_url": "https://docs.python.org", "source_type": "official_docs",
                    "domains": ["software"], "brains": ["code"], "terms_reviewed": True}
@@ -157,6 +157,18 @@ class ApiTests(unittest.TestCase):
         with urlopen(job_request) as response:
             job = json.loads(response.read())["job"]
         self.assertEqual(job["status"], "queued")
+
+
+    def test_knowledge_scout_discovery_requires_registered_enabled_source(self):
+        headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
+        request = Request(
+            self.base + "/v1/knowledge-scout/discover",
+            data=json.dumps({"source_id": "missing-source", "domain": "software",
+                             "brain_id": "code"}).encode(),
+            headers=headers, method="POST")
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(request)
+        self.assertEqual(caught.exception.code, 404)
 
     def test_license_intelligence_api_is_authenticated_and_never_approves_or_installs(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
