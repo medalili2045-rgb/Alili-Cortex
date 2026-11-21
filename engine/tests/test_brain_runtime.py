@@ -97,8 +97,13 @@ class BrainRuntimeTests(unittest.TestCase):
             )
             plan = service.plan_brains("Design and test a software API")
             result = service.dispatch_brains(plan)
+            saved = service.get_brain_dispatch(result["dispatch_id"])
+            listed = service.list_brain_dispatches(limit=5)
         self.assertEqual(result["status"], "completed")
         self.assertTrue(result["finalized"])
+        self.assertEqual(saved["status"], "completed")
+        self.assertEqual(saved["result"]["dispatch_id"], result["dispatch_id"])
+        self.assertTrue(any(item["dispatch_id"] == result["dispatch_id"] for item in listed))
 
     def test_duplicate_assignments_are_rejected(self):
         runtime = ACBrianRuntime(FakeLocalModel(), BrainRegistry())
