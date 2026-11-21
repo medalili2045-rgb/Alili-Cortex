@@ -25,8 +25,20 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify syntax
-        run: python -m compileall -q engine/alili_engine engine/tests
+        run: python -m compileall -q engine/alili_engine engine/tests engine/scripts
       - name: Run engine tests
         env:
           PYTHONPATH: engine
         run: python -m unittest discover -s engine/tests -v
+      - name: Start AC engine API and run live smoke test
+        env:
+          PYTHONPATH: engine
+          ALILI_ENGINE_API_TOKEN: ac-ci-test-token-not-a-production-secret-2026
+          ALILI_ENGINE_HOST: 127.0.0.1
+          ALILI_ENGINE_PORT: "8765"
+          ALILI_ENGINE_DB_PATH: ${{ runner.temp }}/ac-engine-smoke.sqlite3
+        run: |
+          python -m alili_engine.api > "${RUNNER_TEMP}/ac-engine-api.log" 2>&1 &
+          ENGINE_PID=$!
+          trap 'kill "$ENGINE_PID" 2>/dev/null || true' EXIT
+          python engine/scripts/runtime_smoke.py
