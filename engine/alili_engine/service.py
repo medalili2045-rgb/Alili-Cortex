@@ -4,6 +4,7 @@ import sqlite3
 from contextlib import closing
 
 from .brains import BrainRegistry, BrainRouter
+from .brain_runtime import ACBrianRuntime, BrainDispatchError
 from .master_orchestrator import ACMasterOrchestrator
 from .evolution import ACEvolutionEngine
 from .knowledge import KnowledgeStore
@@ -42,6 +43,7 @@ class EngineService:
         self.brain_registry = brain_registry or BrainRegistry()
         self.brain_router = BrainRouter(self.brain_registry)
         self.master = ACMasterOrchestrator(self.brain_registry)
+        self.brain_runtime = ACBrianRuntime(self.model_client, self.brain_registry)
         self.evolution = ACEvolutionEngine(store.database_path)
         self.knowledge = knowledge_store or KnowledgeStore(store.database_path)
         self.training = training_store or TrainingStore(store.database_path)
@@ -69,6 +71,12 @@ class EngineService:
 
     def plan_brains(self, objective: str, *, requested_brains=None, max_brains: int = 6) -> dict:
         return self.master.plan(objective, requested_brains=requested_brains, max_brains=max_brains)
+
+    def brain_runtime_status(self) -> dict:
+        return self.brain_runtime.status()
+
+    def dispatch_brains(self, plan: dict, *, temperature: float = 0.2, max_tokens: int = 512) -> dict:
+        return self.brain_runtime.dispatch(plan, temperature=temperature, max_tokens=max_tokens)
 
     def route(self, task_type: str) -> dict:
         return self.brain_router.route(task_type).to_dict()
