@@ -1,5 +1,7 @@
 """Authenticated standard-library HTTP API for the independent AC engine."""
 
+import base64
+import binascii
 import hmac
 import json
 import logging
@@ -144,6 +146,26 @@ def create_handler(service: EngineService, expected_token: str):
                 except (ValueError, TypeError) as exc:
                     return self._send(400, {"ok": False, "error": str(exc) or "invalid_cloud_plan"})
                 return self._send(200, {"ok": True, "plan": plan})
+            if path == "/v1/libraries":
+                query = parse_qs(parsed.query)
+                try:
+                    items = service.library_catalog(
+                        status=query.get("status", [None])[0],
+                        domain=query.get("domain", [None])[0],
+                        brain=query.get("brain", [None])[0],
+                        query=query.get("q", [None])[0],
+                        limit=int(query.get("limit", ["100"])[0]))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_library_query"})
+                return self._send(200, {"ok": True, "summary": service.library_summary(),
+                                        "policy": "quarantine_first_no_install_no_execution",
+                                        "libraries": items})
+            if path.startswith("/v1/libraries/"):
+                library_id = path.removeprefix("/v1/libraries/")
+                if not library_id or "/" in library_id:
+                    return self._send(404, {"ok": False, "error": "not_found"})
+                item = service.library_detail(library_id)
+                return self._send(200, {"ok": True, "library": item}) if item else self._send(404, {"ok": False, "error": "library_not_found"})
             if path == "/v1/providers":
                 query = parse_qs(parsed.query)
                 try:
@@ -250,6 +272,45 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(status, {"ok": reservation.get("reservation_created", False),
                                            "reservation": reservation})
 
+            if path == "/v1/libraries":
+                artifact = None
+                encoded_artifact = body.get("artifact_base64")
+                if encoded_artifact is not None:
+                    if not isinstance(encoded_artifact, str) or len(encoded_artifact) > 160_000:
+                        return self._send(400, {"ok": False, "error": "invalid_artifact_base64"})
+                    try:
+                        artifact = base64.b64decode(encoded_artifact, validate=True)
+                    except (ValueError, binascii.Error):
+                        return self._send(400, {"ok": False, "error": "invalid_artifact_base64"})
+                try:
+                    item = service.register_library(
+                        library_id=body.get("library_id"), name=body.get("name"),
+                        version=body.get("version"), ecosystem=body.get("ecosystem"),
+                        source_url=body.get("source_url"), source_commit=body.get("source_commit"),
+                        license_id=body.get("license_id"), artifact=artifact,
+                        domains=body.get("domains", []), brains=body.get("brains", []),
+                        license_approval=body.get("license_approval"))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc) or "invalid_library"})
+                return self._send(202, {"ok": True, "library": item,
+                                        "notice": "quarantined_until_explicit_artifact_scoped_license_review"
+                                        if item["status"] == "quarantined" else "explicit_license_evidence_recorded"})
+            if is_library_review:
+                library_id = path.removeprefix("/v1/libraries/").removesuffix("/review")
+                if not library_id or "/" in library_id:
+                    return self._send(400, {"ok": False, "error": "invalid_library_id"})
+                try:
+                    item = service.review_library(
+                        library_id, decision=body.get("decision"),
+                        reviewer=body.get("reviewer"),
+                        evidence_ref=body.get("evidence_ref"),
+                        artifact_scope=body.get("artifact_scope"),
+                        notes=body.get("notes", ""))
+                except KeyError:
+                    return self._send(404, {"ok": False, "error": "library_not_found"})
+                except (ValueError, TypeError, AttributeError) as exc:
+                    return self._send(409, {"ok": False, "error": str(exc) or "library_review_rejected"})
+                return self._send(200, {"ok": True, "library": item})
             if path == "/v1/ai-observatory/studies":
                 query = parse_qs(parsed.query)
                 try:
@@ -323,16 +384,17 @@ def create_handler(service: EngineService, expected_token: str):
             path = urlsplit(self.path).path
             if not self._authorized():
                 return self._send(401, {"ok": False, "error": "unauthorized"})
-            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/knowledge", "/v1/execution/run",
+            allowed = {"/v1/tasks", "/v1/generate", "/v1/route", "/v1/knowledge", "/v1/execution/run", "/v1/libraries",
                        "/v1/training/runs", "/v1/training/preflight",
                        "/v1/study/evidence", "/v1/study/sessions",
                        "/v1/connectors/fetch", "/v1/links",
                        "/v1/ai-observatory/studies", "/v1/ai-observatory/evaluate-response"}
+            is_library_review = path.startswith("/v1/libraries/") and path.endswith("/review")
             is_knowledge_transition = path.startswith("/v1/knowledge/") and path.endswith("/transition")
             is_training_evaluation = path.startswith("/v1/training/runs/") and path.endswith("/evaluate")
             is_study_evaluation = path.startswith("/v1/study/sessions/") and path.endswith("/evaluate")
             is_study_knowledge_proposal = path.startswith("/v1/study/sessions/") and path.endswith("/propose-knowledge")
-            if path not in allowed and not is_knowledge_transition and not is_training_evaluation and not is_study_evaluation and not is_study_knowledge_proposal:
+            if path not in allowed and not is_library_review and not is_knowledge_transition and not is_training_evaluation and not is_study_evaluation and not is_study_knowledge_proposal:
                 return self._send(404, {"ok": False, "error": "not_found"})
             body, error = self._read_json()
             if error:
