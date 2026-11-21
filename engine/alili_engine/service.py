@@ -4,7 +4,7 @@ import sqlite3
 from contextlib import closing
 
 from .brains import BrainRegistry, BrainRouter
-from .brain_runtime import ACBrianRuntime, BrainDispatchError
+from .brain_runtime import ACBrianRuntime
 from .master_orchestrator import ACMasterOrchestrator
 from .evolution import ACEvolutionEngine
 from .knowledge import KnowledgeStore
