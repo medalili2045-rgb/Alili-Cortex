@@ -231,6 +231,21 @@ def create_handler(service: EngineService, expected_token: str):
                 return self._send(200, {"ok": True, **service.brains()})
             if path == "/v1/brains/runtime":
                 return self._send(200, {"ok": True, "runtime": service.brain_runtime_status()})
+            if path == "/v1/brains/dispatches":
+                query = parse_qs(parsed.query)
+                try:
+                    items = service.list_brain_dispatches(
+                        status=query.get("status", [None])[0],
+                        limit=int(query.get("limit", ["50"])[0]))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(200, {"ok": True, "dispatches": items})
+            if path.startswith("/v1/brains/dispatches/"):
+                dispatch_id = path.removeprefix("/v1/brains/dispatches/")
+                if not dispatch_id or "/" in dispatch_id:
+                    return self._send(404, {"ok": False, "error": "not_found"})
+                item = service.get_brain_dispatch(dispatch_id)
+                return self._send(200, {"ok": True, "dispatch": item}) if item else self._send(404, {"ok": False, "error": "dispatch_not_found"})
             if path == "/v1/models":
                 return self._send(200, {"ok": True, "family": service.model_family(),
                                         "models": service.list_models()})
@@ -604,9 +619,10 @@ def create_handler(service: EngineService, expected_token: str):
                 status_code = (503 if result.get("status") == "blocked" else
                                207 if result.get("status") == "partial_failure" else
                                200 if result.get("status") == "completed" else 202)
+                record = service.get_brain_dispatch(result["dispatch_id"])
                 return self._send(status_code, {
                     "ok": result.get("status") == "completed",
-                    "plan": plan, "dispatch": result,
+                    "plan": plan, "dispatch": result, "record": record,
                 })
 
             if path == "/v1/brains/plan":
