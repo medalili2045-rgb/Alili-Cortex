@@ -24,6 +24,7 @@ from .observatory import AICapabilityObservatory
 from .execution_sandbox import ACExecutionSandbox
 from .library_foundry import LibraryFoundry
 from .license_intelligence import LicenseIntelligence
+from .knowledge_scout import KnowledgeScout
 
 
 class EngineService:
@@ -51,6 +52,7 @@ class EngineService:
         self.execution = execution_sandbox or ACExecutionSandbox()
         self.libraries = library_foundry or LibraryFoundry(store.database_path)
         self.license_intelligence = LicenseIntelligence()
+        self.knowledge_scout = KnowledgeScout(store.database_path)
 
     def capabilities(self) -> dict:
         return {"policy": "free_first_no_paid_fallback", "capabilities": self.registry.all()}
@@ -314,6 +316,31 @@ class EngineService:
 
     def list_knowledge(self, *, status: str | None = None, limit: int = 50) -> list[dict]:
         return self.knowledge.list(status=status, limit=limit)
+
+
+    def knowledge_scout_status(self) -> dict:
+        return self.knowledge_scout.summary()
+
+    def scout_sources(self, *, enabled=None, limit=100) -> list[dict]:
+        return self.knowledge_scout.list_sources(enabled=enabled, limit=limit)
+
+    def register_scout_source(self, **kwargs) -> dict:
+        return self.knowledge_scout.register_source(**kwargs)
+
+    def enable_scout_source(self, source_id: str, **kwargs) -> dict:
+        return self.knowledge_scout.set_source_enabled(source_id, True, **kwargs)
+
+    def enqueue_scout_job(self, **kwargs) -> dict:
+        return self.knowledge_scout.enqueue(**kwargs)
+
+    def scout_jobs(self, *, status=None, limit=50) -> list[dict]:
+        return self.knowledge_scout.list_jobs(status=status, limit=limit)
+
+    def propose_scout_knowledge(self, **kwargs) -> dict:
+        return self.knowledge_scout.propose(**kwargs)
+
+    def scout_proposals(self, *, status=None, limit=50) -> list[dict]:
+        return self.knowledge_scout.list_proposals(status=status, limit=limit)
 
     def get_task(self, task_id: str) -> dict | None:
         return self.store.get(task_id)

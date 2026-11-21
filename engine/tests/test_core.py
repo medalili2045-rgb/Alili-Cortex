@@ -128,6 +128,25 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(saved["plan"]["execution_status"], "capability_not_implemented")
 
 
+    def test_knowledge_scout_api_is_authenticated_and_quarantine_first(self):
+        headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
+        with urlopen(Request(self.base + "/v1/knowledge-scout/status", headers=headers)) as response:
+            status = json.loads(response.read())
+        self.assertEqual(status["scout"]["network_fetch"], "not_implemented")
+        payload = {"source_id": "python-docs", "name": "Python Docs",
+                   "base_url": "https://docs.python.org", "source_type": "official_docs",
+                   "domains": ["software"], "brains": ["code"], "terms_reviewed": True}
+        request = Request(self.base + "/v1/knowledge-scout/sources",
+                          data=json.dumps(payload).encode(), headers=headers, method="POST")
+        with urlopen(request) as response:
+            source = json.loads(response.read())["source"]
+        self.assertFalse(source["enabled"])
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(Request(self.base + "/v1/knowledge-scout/jobs",
+                            data=json.dumps({"source_id": "python-docs", "query": "async"}).encode(),
+                            headers=headers, method="POST"))
+        self.assertEqual(caught.exception.code, 400)
+
     def test_license_intelligence_api_is_authenticated_and_never_approves_or_installs(self):
         headers = {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}
         with urlopen(Request(self.base + "/v1/license-intelligence/status", headers=headers)) as response:

@@ -187,6 +187,33 @@ def create_handler(service: EngineService, expected_token: str):
                     return self._send(404, {"ok": False, "error": "not_found"})
                 provider = service.provider_detail(provider_id)
                 return self._send(200, {"ok": True, "provider": provider}) if provider else self._send(404, {"ok": False, "error": "provider_not_found"})
+            if path == "/v1/knowledge-scout/status":
+                return self._send(200, {"ok": True, "scout": service.knowledge_scout_status()})
+            if path == "/v1/knowledge-scout/sources":
+                query = parse_qs(parsed.query)
+                try:
+                    limit = int(query.get("limit", ["100"])[0])
+                    enabled_value = query.get("enabled", [None])[0]
+                    enabled = None if enabled_value is None else enabled_value.lower() == "true"
+                    return self._send(200, {"ok": True, "sources": service.scout_sources(enabled=enabled, limit=limit)})
+                except (ValueError, TypeError):
+                    return self._send(400, {"ok": False, "error": "invalid_scout_query"})
+            if path == "/v1/knowledge-scout/jobs":
+                query = parse_qs(parsed.query)
+                try:
+                    return self._send(200, {"ok": True, "jobs": service.scout_jobs(
+                        status=query.get("status", [None])[0],
+                        limit=int(query.get("limit", ["50"])[0]))})
+                except (ValueError, TypeError):
+                    return self._send(400, {"ok": False, "error": "invalid_scout_query"})
+            if path == "/v1/knowledge-scout/proposals":
+                query = parse_qs(parsed.query)
+                try:
+                    return self._send(200, {"ok": True, "proposals": service.scout_proposals(
+                        status=query.get("status", [None])[0],
+                        limit=int(query.get("limit", ["50"])[0]))})
+                except (ValueError, TypeError):
+                    return self._send(400, {"ok": False, "error": "invalid_scout_query"})
             if path == "/v1/capabilities":
                 return self._send(200, {"ok": True, **service.capabilities()})
             if path == "/v1/brains":
@@ -351,7 +378,9 @@ def create_handler(service: EngineService, expected_token: str):
                        "/v1/training/runs", "/v1/training/preflight",
                        "/v1/study/evidence", "/v1/study/sessions",
                        "/v1/connectors/fetch", "/v1/links",
-                       "/v1/ai-observatory/studies", "/v1/ai-observatory/evaluate-response"}
+                       "/v1/ai-observatory/studies", "/v1/ai-observatory/evaluate-response",
+                       "/v1/knowledge-scout/sources", "/v1/knowledge-scout/jobs",
+                       "/v1/knowledge-scout/proposals"}
             is_library_review = path.startswith("/v1/libraries/") and path.endswith("/review")
             is_knowledge_transition = path.startswith("/v1/knowledge/") and path.endswith("/transition")
             is_training_evaluation = path.startswith("/v1/training/runs/") and path.endswith("/evaluate")
@@ -363,6 +392,37 @@ def create_handler(service: EngineService, expected_token: str):
             if error:
                 return self._send(error[0], {"ok": False, "error": error[1]})
 
+            if path == "/v1/knowledge-scout/sources":
+                try:
+                    item = service.register_scout_source(
+                        source_id=body.get("source_id"), name=body.get("name"),
+                        base_url=body.get("base_url"), source_type=body.get("source_type"),
+                        domains=body.get("domains"), brains=body.get("brains"),
+                        terms_reviewed=body.get("terms_reviewed", False))
+                except (ValueError, TypeError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(201, {"ok": True, "source": item,
+                                         "notice": "source_starts_disabled"})
+            if path == "/v1/knowledge-scout/jobs":
+                try:
+                    job = service.enqueue_scout_job(source_id=body.get("source_id"),
+                                                    query=body.get("query"))
+                except (ValueError, TypeError, KeyError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(202, {"ok": True, "job": job,
+                                        "notice": "queued_only_no_fetch_performed"})
+            if path == "/v1/knowledge-scout/proposals":
+                try:
+                    proposal = service.propose_scout_knowledge(
+                        source_id=body.get("source_id"), title=body.get("title"),
+                        note=body.get("note"), domain=body.get("domain"),
+                        brain_id=body.get("brain_id"), source_url=body.get("source_url"),
+                        retrieved_at=body.get("retrieved_at"),
+                        license_evidence_url=body.get("license_evidence_url"))
+                except (ValueError, TypeError, KeyError) as exc:
+                    return self._send(400, {"ok": False, "error": str(exc)})
+                return self._send(201, {"ok": True, "proposal": proposal,
+                                        "notice": "quarantined_not_published"})
             if path == "/v1/license-intelligence/analyze":
                 dependency_report = body.get("dependency_report")
                 if not isinstance(dependency_report, dict):
