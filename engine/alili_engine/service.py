@@ -98,6 +98,12 @@ class EngineService:
     def provider_summary(self) -> dict:
         return self.providers.summary()
 
+    def execution_status(self) -> dict:
+        return self.execution.status()
+
+    def execute_python(self, code: str, *, input_text: str = "") -> dict:
+        return self.execution.run(code, input_text=input_text)
+
     def cloud_status(self) -> dict:
         return self.cloud.status()
 
