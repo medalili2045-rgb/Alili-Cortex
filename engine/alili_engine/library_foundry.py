@@ -107,6 +107,12 @@ class LibraryFoundry:
         )
         license_status = "approved" if approved else "review_required"
         status = "approved" if approved else "quarantined"
+        review_record = (json.dumps({
+            "reviewer": license_approval["reviewer"],
+            "evidence_ref": license_approval["evidence_ref"],
+            "artifact_scope": license_approval["artifact_scope"],
+            "reviewed": True,
+        }, ensure_ascii=False) if approved else "explicit_license_review_required")
         now = _utc_now()
         with self._connect() as db:
             if fp.get("sha256"):
@@ -126,7 +132,7 @@ class LibraryFoundry:
                   source_url, source_commit, license_id, license_status,
                   fp.get("sha256"), fp.get("size_bytes"),
                   json.dumps(sorted(set(domains))), json.dumps(sorted(set(brains))),
-                  status, None if approved else "explicit_license_review_required",
+                  status, review_record,
                   now, now))
         return self.get(library_id)
 
@@ -165,7 +171,8 @@ class LibraryFoundry:
         item = self.get(library_id)
         if item is None:
             raise KeyError("library_not_found")
-        if not reviewer.strip() or not evidence_ref.startswith("https://"):
+        if (not isinstance(reviewer, str) or not reviewer.strip()
+                or not isinstance(evidence_ref, str) or not evidence_ref.startswith("https://")):
             raise ValueError("reviewer_and_https_evidence_required")
         if artifact_scope not in {"source_code", "documentation", "dataset", "model_weights", "package"}:
             raise ValueError("invalid_artifact_scope")
