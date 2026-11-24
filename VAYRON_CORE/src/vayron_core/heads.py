@@ -21,7 +21,7 @@ DEFAULT_HEADS: tuple[HeadSpec, ...] = (
     HeadSpec("LEARN_yzn", "learning plans and knowledge acquisition", ("learn", "study", "train", "تعلم", "ادرس", "تدرب")),
     HeadSpec("MEMORY_yzn", "memory retrieval and knowledge organization", ("remember", "memory", "recall", "تذكر", "ذاكرة", "استرجع")),
     HeadSpec("CODE_yzn", "software engineering and code", ("code", "python", "javascript", "برمج", "كود", "شفرة")),
-    HeadSpec("BUILD_yzn", "application and project construction", ("build", "create app", "project", "أنشئ", "تطبيق", "مشروع")),
+    HeadSpec("BUILD_yzn", "application and project construction", ("build", "create app", "application", "app", "project", "أنشئ", "تطبيق", "مشروع")),
     HeadSpec("VISION_yzn", "image and visual understanding", ("image", "picture", "photo", "صورة", "بصري")),
     HeadSpec("VERIFY_yzn", "testing, evidence and validation", ("verify", "test", "check", "تحقق", "اختبر", "افحص")),
     HeadSpec("EVOLVE_yzn", "measured improvement proposals", ("improve", "optimize", "evolve", "طور", "حسن", "تحسين")),
