@@ -9,7 +9,7 @@ except ImportError as exc:  # pragma: no cover
 from .model_runtime import ModelDescriptor
 from .neural import VayronLanguageModel
 from .tokenizer import VayronByteTokenizer
-from .training import load_checkpoint
+from .training import load_checkpoint_bundle
 
 
 class TorchCheckpointAdapter:
@@ -17,28 +17,23 @@ class TorchCheckpointAdapter:
         self.checkpoint_path = Path(checkpoint_path)
         if not self.checkpoint_path.is_file():
             raise FileNotFoundError(self.checkpoint_path)
-        metadata = torch.load(self.checkpoint_path, map_location=device, weights_only=True)
-        provenance = metadata.get("data_provenance", {})
-        license_note = str(provenance.get("license_note", "")).strip()
-        if not license_note:
-            raise ValueError("Checkpoint is missing training-data license provenance")
-        config = metadata.get("model_config", {})
-        self.model: VayronLanguageModel = load_checkpoint(self.checkpoint_path, device=device)
+        self.model, metadata = load_checkpoint_bundle(self.checkpoint_path, device=device)
         self.tokenizer = VayronByteTokenizer()
         self.device = torch.device(device)
+        config = metadata["model_config"]
         self.descriptor = ModelDescriptor(
             name="vayron-local",
             version="0.4.0",
             architecture=f"VayronDecoder(d_model={config.get('d_model')}, layers={config.get('n_layers')})",
             weights_path=str(self.checkpoint_path),
-            license_note=license_note,
+            license_note=metadata["data_provenance"]["license_note"],
         )
 
     def generate(self, prompt: str, *, max_new_tokens: int = 512) -> str:
-        if not prompt.strip():
+        if not isinstance(prompt, str) or not prompt.strip():
             raise ValueError("Prompt cannot be empty")
-        if not 1 <= max_new_tokens <= 8192:
-            raise ValueError("max_new_tokens must be between 1 and 8192")
+        if not isinstance(max_new_tokens, int) or not 1 <= max_new_tokens <= 2048:
+            raise ValueError("max_new_tokens must be an integer between 1 and 2048")
         token_ids = self.tokenizer.encode(prompt)
         input_ids = torch.tensor([token_ids], dtype=torch.long, device=self.device)
         with torch.no_grad():
