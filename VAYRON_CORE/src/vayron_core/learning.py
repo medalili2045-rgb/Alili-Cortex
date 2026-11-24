@@ -1,11 +1,12 @@
 """Review-gated knowledge intake. This records knowledge; it does not train weights."""
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Protocol
 
 
 class MemoryBackend(Protocol):
-    def add(self, content: str, metadata: dict | None = None) -> object: ...
+    def add(self, content: str, category: str = "general") -> object: ...
 
 
 @dataclass(frozen=True)
@@ -27,11 +28,9 @@ class LearningJournal:
             raise ValueError("A license/provenance note is required")
         if not candidate.reviewed:
             raise PermissionError("Candidate must be reviewed before entering trusted memory")
-        metadata = {
-            "source": candidate.source,
-            "license_note": candidate.license_note,
-            "reviewed": True,
+        record = {
+            **asdict(candidate),
             "recorded_at": datetime.now(timezone.utc).isoformat(),
             "kind": "knowledge_record_not_weight_training",
         }
-        return self.memory.add(candidate.content, metadata)
+        return self.memory.add(json.dumps(record, ensure_ascii=False), category="reviewed_knowledge")
