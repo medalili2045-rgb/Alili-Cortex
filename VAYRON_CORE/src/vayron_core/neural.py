@@ -25,8 +25,8 @@ class VayronModelConfig:
     def validate(self) -> None:
         if self.vocab_size < 259:
             raise ValueError("vocab_size must include byte and special tokens (>=259)")
-        if self.d_model <= 0 or self.n_heads <= 0 or self.n_layers <= 0:
-            raise ValueError("model dimensions must be positive")
+        if self.d_model <= 0 or self.n_heads <= 0 or self.n_layers <= 0 or self.mlp_ratio <= 0:
+            raise ValueError("model dimensions and mlp_ratio must be positive")
         if self.d_model % self.n_heads:
             raise ValueError("d_model must be divisible by n_heads")
         if self.max_seq_len < 2:
@@ -49,8 +49,10 @@ class CausalSelfAttention(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch, length, width = x.shape
         q, k, v = self.qkv(x).chunk(3, dim=-1)
+
         def split(t: torch.Tensor) -> torch.Tensor:
             return t.view(batch, length, self.heads, self.head_dim).transpose(1, 2)
+
         q, k, v = split(q), split(k), split(v)
         scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.head_dim)
         scores = scores.masked_fill(~self.causal_mask[:length, :length], torch.finfo(scores.dtype).min)
@@ -102,10 +104,16 @@ class VayronLanguageModel(nn.Module):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
-        if input_ids.ndim != 2:
-            raise ValueError("input_ids must have shape [batch, sequence]")
+        if not isinstance(input_ids, torch.Tensor) or input_ids.ndim != 2:
+            raise ValueError("input_ids must be a tensor with shape [batch, sequence]")
+        if input_ids.dtype != torch.long:
+            raise TypeError("input_ids must use torch.long token IDs")
+        if input_ids.shape[0] == 0 or input_ids.shape[1] == 0:
+            raise ValueError("input_ids batch and sequence dimensions cannot be empty")
         if input_ids.shape[1] > self.config.max_seq_len:
             raise ValueError("sequence exceeds configured max_seq_len")
+        if torch.any(input_ids < 0) or torch.any(input_ids >= self.config.vocab_size):
+            raise ValueError("input token ID is outside the configured vocabulary")
         positions = torch.arange(input_ids.shape[1], device=input_ids.device)
         x = self.token_embedding(input_ids) + self.position_embedding(positions)[None, :, :]
         for block in self.blocks:
@@ -117,10 +125,21 @@ class VayronLanguageModel(nn.Module):
 
     @torch.no_grad()
     def generate(self, input_ids: torch.Tensor, *, max_new_tokens: int = 64) -> torch.Tensor:
+        if not isinstance(input_ids, torch.Tensor) or input_ids.ndim != 2:
+            raise ValueError("input_ids must be a tensor with shape [batch, sequence]")
+        if input_ids.dtype != torch.long:
+            raise TypeError("input_ids must use torch.long token IDs")
+        if input_ids.shape[0] == 0 or input_ids.shape[1] == 0:
+            raise ValueError("generation prompt cannot be empty")
+        if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or not 0 <= max_new_tokens <= 8192:
+            raise ValueError("max_new_tokens must be an integer between 0 and 8192")
+        if torch.any(input_ids < 0) or torch.any(input_ids >= self.config.vocab_size):
+            raise ValueError("input token ID is outside the configured vocabulary")
         self.eval()
+        generated = input_ids
         for _ in range(max_new_tokens):
-            context = input_ids[:, -self.config.max_seq_len:]
+            context = generated[:, -self.config.max_seq_len:]
             logits = self(context)[:, -1, :]
             next_token = torch.argmax(logits, dim=-1, keepdim=True)
-            input_ids = torch.cat((input_ids, next_token), dim=1)
-        return input_ids
+            generated = torch.cat((generated, next_token), dim=1)
+        return generated
