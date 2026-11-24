@@ -33,15 +33,17 @@ class FakeMemory:
     def __init__(self):
         self.records = []
 
-    def add(self, content, metadata=None):
-        self.records.append((content, metadata))
+    def add(self, content, category="general"):
+        self.records.append((content, category))
         return len(self.records)
 
 
 def test_learning_requires_review_and_provenance():
-    journal = LearningJournal(FakeMemory())
+    memory = FakeMemory()
+    journal = LearningJournal(memory)
     candidate = LearningCandidate("A useful fact", "docs", "MIT", reviewed=False)
     with pytest.raises(PermissionError):
         journal.ingest(candidate)
     accepted = LearningCandidate("A useful fact", "docs", "MIT", reviewed=True)
     assert journal.ingest(accepted) == 1
+    assert memory.records[0][1] == "reviewed_knowledge"
