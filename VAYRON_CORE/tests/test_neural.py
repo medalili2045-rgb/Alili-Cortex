@@ -19,6 +19,22 @@ def test_model_rejects_long_sequence():
         model(torch.ones((1, 9), dtype=torch.long))
 
 
+def test_model_rejects_invalid_token_ids_and_dtype():
+    model = VayronLanguageModel(VayronModelConfig(d_model=32, n_heads=4, n_layers=1, max_seq_len=8))
+    with pytest.raises(ValueError, match="outside"):
+        model(torch.tensor([[259]], dtype=torch.long))
+    with pytest.raises(TypeError, match="torch.long"):
+        model(torch.tensor([[1.0]]))
+
+
+def test_generation_rejects_empty_or_unbounded_inputs():
+    model = VayronLanguageModel(VayronModelConfig(d_model=32, n_heads=4, n_layers=1, max_seq_len=8))
+    with pytest.raises(ValueError, match="cannot be empty"):
+        model.generate(torch.empty((1, 0), dtype=torch.long))
+    with pytest.raises(ValueError, match="between 0 and 8192"):
+        model.generate(torch.ones((1, 1), dtype=torch.long), max_new_tokens=-1)
+
+
 def test_tiny_training_creates_loadable_checkpoint_with_validation(tmp_path):
     report = train_text(
         ("Vayron learns from carefully licensed text. " * 100),
