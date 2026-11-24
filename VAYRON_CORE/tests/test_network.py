@@ -10,7 +10,7 @@ def test_heads_are_unique_and_follow_naming_contract():
     names = [head.name for head in heads]
     assert len(names) == len(set(names))
     assert all(name.endswith("_yzn") for name in names)
-    assert len(heads) >= 10
+    assert len(heads) == 18
 
 
 def test_router_selects_code_head():
