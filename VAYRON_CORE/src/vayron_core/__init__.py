@@ -10,6 +10,7 @@ from .network import VayronNetwork, NetworkTrace
 from .learning import LearningJournal, LearningCandidate
 from .model_runtime import ModelRuntime, ModelDescriptor, LocalModelAdapter
 from .tokenizer import VayronByteTokenizer, TokenizerConfig
+from .assistant import VayronAssistant, AssistantReply
 
 __all__ = [
     "VayronEngine", "MemoryStore", "CapabilityRegistry", "Capability",
@@ -17,5 +18,6 @@ __all__ = [
     "ResultVerifier", "VerificationReport", "VayronNetwork", "NetworkTrace",
     "LearningJournal", "LearningCandidate", "ModelRuntime", "ModelDescriptor",
     "LocalModelAdapter", "VayronByteTokenizer", "TokenizerConfig",
+    "VayronAssistant", "AssistantReply",
 ]
 __version__ = "0.4.0"
