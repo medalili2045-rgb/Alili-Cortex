@@ -18,8 +18,10 @@ class VayronEngine:
         return {
             "name": "Alili Vayron",
             "core": "VAYRON_CORE",
-            "version": "0.1.0",
+            "version": "0.4.0",
+            "mode": "foundation_only",
             "ready": True,
+            "assistant_ready": False,
             "model_loaded": False,
             "external_api_required": False,
             "capabilities": list(self.registry.names()),
@@ -31,13 +33,12 @@ class VayronEngine:
         return capability.handler(payload)
 
     def respond(self, message: str) -> str:
-        """Honest bootstrap response until an original language model is integrated."""
+        """Honest bootstrap response until a local model is registered."""
         prompt = message.strip()
         if not prompt:
             raise ValueError("Message cannot be empty")
         return (
             "VAYRON_CORE is running in foundation mode. "
-            "The original language model is not integrated yet. "
-            "Your message was received; connect a tested local model adapter "
-            "to enable generated reasoning and conversation."
+            "No trained Vayron model is currently loaded. "
+            "Register a tested local checkpoint to enable generated conversation."
         )
