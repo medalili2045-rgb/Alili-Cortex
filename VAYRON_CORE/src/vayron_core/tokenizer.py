@@ -1,7 +1,7 @@
 """Deterministic UTF-8 byte tokenizer owned by Vayron.
 
-Byte tokenization is deliberately simple and multilingual-safe. It is a
-baseline tokenizer, not a claim of optimal compression or language quality.
+Byte tokenization is multilingual-safe but inefficient compared with learned
+subword tokenizers. Special-token spellings are stable for readable debugging.
 """
 from dataclasses import dataclass
 
@@ -17,6 +17,11 @@ class TokenizerConfig:
 class VayronByteTokenizer:
     def __init__(self) -> None:
         self.config = TokenizerConfig()
+        self._special_spellings = {
+            self.config.bos_id: "<|bos|>",
+            self.config.eos_id: "<|eos|>",
+            self.config.pad_id: "<|pad|>",
+        }
 
     @property
     def vocab_size(self) -> int:
@@ -33,15 +38,27 @@ class VayronByteTokenizer:
         return tokens
 
     def decode(self, token_ids: list[int], *, skip_special_tokens: bool = True) -> str:
+        pieces: list[str] = []
         raw = bytearray()
+
+        def flush_bytes() -> None:
+            if raw:
+                pieces.append(raw.decode("utf-8", errors="replace"))
+                raw.clear()
+
         for token in token_ids:
+            if isinstance(token, bool) or not isinstance(token, int):
+                raise TypeError("token ids must be integers")
             if 0 <= token <= 255:
                 raw.append(token)
-            elif not skip_special_tokens and token in (self.config.bos_id, self.config.eos_id, self.config.pad_id):
-                continue
-            elif token not in (self.config.bos_id, self.config.eos_id, self.config.pad_id):
+            elif token in self._special_spellings:
+                if not skip_special_tokens:
+                    flush_bytes()
+                    pieces.append(self._special_spellings[token])
+            else:
                 raise ValueError(f"Token id out of range: {token}")
-        return raw.decode("utf-8", errors="replace")
+        flush_bytes()
+        return "".join(pieces)
 
     def to_dict(self) -> dict[str, int | str]:
         return {"type": "utf8-byte", **self.config.__dict__}
