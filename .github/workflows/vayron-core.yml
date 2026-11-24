@@ -1,15 +1,14 @@
 name: Vayron Core Tests
 
 on:
-  push:
-    branches: [vayron-core-foundation]
-    paths:
-      - "VAYRON_CORE/**"
-      - ".github/workflows/vayron-core.yml"
   pull_request:
     paths:
       - "VAYRON_CORE/**"
       - ".github/workflows/vayron-core.yml"
+
+concurrency:
+  group: vayron-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
