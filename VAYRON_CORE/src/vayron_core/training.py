@@ -16,6 +16,8 @@ except ImportError as exc:  # pragma: no cover
 from .neural import VayronLanguageModel, VayronModelConfig
 from .tokenizer import VayronByteTokenizer
 
+CHECKPOINT_FORMAT_VERSION = 1
+
 
 @dataclass(frozen=True)
 class TrainingConfig:
@@ -89,9 +91,9 @@ def train_text(
     model_config: VayronModelConfig | None = None,
     training_config: TrainingConfig | None = None,
 ) -> dict:
-    if not text.strip():
+    if not isinstance(text, str) or not text.strip():
         raise ValueError("Training text cannot be empty")
-    if not source.strip() or not license_note.strip():
+    if not isinstance(source, str) or not source.strip() or not isinstance(license_note, str) or not license_note.strip():
         raise ValueError("A source and explicit license/provenance note are required")
     model_config = model_config or VayronModelConfig()
     training_config = training_config or TrainingConfig()
@@ -144,6 +146,7 @@ def train_text(
     target.mkdir(parents=True, exist_ok=True)
     checkpoint = target / "vayron-small.pt"
     checkpoint_payload = {
+        "format_version": CHECKPOINT_FORMAT_VERSION,
         "model_state_dict": model.state_dict(),
         "model_config": model.config_dict(),
         "tokenizer": tokenizer.to_dict(),
@@ -151,7 +154,7 @@ def train_text(
         "steps": steps,
         "final_train_loss": losses[-1],
         "validation_loss": validation_loss,
-        "data_provenance": {"source": source, "license_note": license_note},
+        "data_provenance": {"source": source.strip(), "license_note": license_note.strip()},
         "model_origin": "Vayron initialized from random weights; trained only on supplied corpus",
     }
     torch.save(checkpoint_payload, checkpoint)
@@ -169,11 +172,34 @@ def train_text(
     return report
 
 
-def load_checkpoint(path: str | Path, *, device: str = "cpu") -> VayronLanguageModel:
+def load_checkpoint_bundle(path: str | Path, *, device: str = "cpu") -> tuple[VayronLanguageModel, dict]:
+    """Load and validate a Vayron checkpoint and its tokenizer/provenance metadata."""
     checkpoint = torch.load(Path(path), map_location=device, weights_only=True)
-    config = VayronModelConfig(**checkpoint["model_config"])
-    model = VayronLanguageModel(config)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    if not isinstance(checkpoint, dict):
+        raise ValueError("Checkpoint payload must be a dictionary")
+    if checkpoint.get("format_version") != CHECKPOINT_FORMAT_VERSION:
+        raise ValueError("Unsupported or missing Vayron checkpoint format version")
+    provenance = checkpoint.get("data_provenance")
+    if not isinstance(provenance, dict) or not str(provenance.get("source", "")).strip() or not str(provenance.get("license_note", "")).strip():
+        raise ValueError("Checkpoint is missing training-data source or license provenance")
+    if checkpoint.get("tokenizer") != VayronByteTokenizer().to_dict():
+        raise ValueError("Checkpoint tokenizer does not match this Vayron runtime")
+    config_data = checkpoint.get("model_config")
+    state_dict = checkpoint.get("model_state_dict")
+    if not isinstance(config_data, dict) or not isinstance(state_dict, dict):
+        raise ValueError("Checkpoint is missing model configuration or weights")
+    try:
+        config = VayronModelConfig(**config_data)
+        model = VayronLanguageModel(config)
+        model.load_state_dict(state_dict, strict=True)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError("Checkpoint model configuration or weights are invalid") from exc
     model.to(device)
     model.eval()
+    return model, checkpoint
+
+
+def load_checkpoint(path: str | Path, *, device: str = "cpu") -> VayronLanguageModel:
+    """Load a validated Vayron checkpoint for local inference."""
+    model, _ = load_checkpoint_bundle(path, device=device)
     return model
