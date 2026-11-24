@@ -25,12 +25,15 @@ class TrainingConfig:
     max_steps: int = 100
     seed: int = 42
     device: str = "auto"
+    validation_fraction: float = 0.1
 
     def validate(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.max_steps < 1:
             raise ValueError("epochs, batch_size and max_steps must be positive")
         if self.learning_rate <= 0:
             raise ValueError("learning_rate must be positive")
+        if not 0.05 <= self.validation_fraction <= 0.4:
+            raise ValueError("validation_fraction must be between 0.05 and 0.4")
 
 
 class TokenBlockDataset(Dataset):
@@ -38,7 +41,7 @@ class TokenBlockDataset(Dataset):
         if block_size < 2:
             raise ValueError("block_size must be >= 2")
         if len(token_ids) < block_size + 1:
-            raise ValueError("training text must contain at least block_size + 1 tokens")
+            raise ValueError("text must contain at least block_size + 1 tokens")
         self.tokens = torch.tensor(token_ids, dtype=torch.long)
         self.block_size = block_size
         self.count = len(token_ids) - block_size
@@ -60,15 +63,36 @@ def _device(requested: str) -> torch.device:
     return device
 
 
+@torch.no_grad()
+def _evaluate(model, loader, device) -> float:
+    model.eval()
+    losses = []
+    for inputs, targets in loader:
+        inputs, targets = inputs.to(device), targets.to(device)
+        logits = model(inputs)
+        loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
+        if not torch.isfinite(loss):
+            raise FloatingPointError("Non-finite validation loss")
+        losses.append(float(loss.cpu()))
+    if not losses:
+        raise ValueError("Validation dataset is empty")
+    model.train()
+    return sum(losses) / len(losses)
+
+
 def train_text(
     text: str,
     output_dir: str | Path,
     *,
+    source: str,
+    license_note: str,
     model_config: VayronModelConfig | None = None,
     training_config: TrainingConfig | None = None,
 ) -> dict:
     if not text.strip():
         raise ValueError("Training text cannot be empty")
+    if not source.strip() or not license_note.strip():
+        raise ValueError("A source and explicit license/provenance note are required")
     model_config = model_config or VayronModelConfig()
     training_config = training_config or TrainingConfig()
     model_config.validate()
@@ -81,8 +105,16 @@ def train_text(
     tokenizer = VayronByteTokenizer()
     tokens = tokenizer.encode(text)
     block_size = model_config.max_seq_len
-    dataset = TokenBlockDataset(tokens, block_size)
-    loader = DataLoader(dataset, batch_size=training_config.batch_size, shuffle=True)
+    split = int(len(tokens) * (1.0 - training_config.validation_fraction))
+    if split < block_size + 1 or len(tokens) - split < block_size + 1:
+        raise ValueError("Corpus is too small for non-overlapping train and validation blocks")
+    train_tokens = tokens[:split]
+    validation_tokens = tokens[split:]
+    train_data = TokenBlockDataset(train_tokens, block_size)
+    validation_data = TokenBlockDataset(validation_tokens, block_size)
+    train_loader = DataLoader(train_data, batch_size=training_config.batch_size, shuffle=True)
+    validation_loader = DataLoader(validation_data, batch_size=training_config.batch_size, shuffle=False)
+
     device = _device(training_config.device)
     model = VayronLanguageModel(model_config).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=training_config.learning_rate)
@@ -90,7 +122,7 @@ def train_text(
     steps = 0
     model.train()
     for _ in range(training_config.epochs):
-        for inputs, targets in loader:
+        for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad(set_to_none=True)
             logits = model(inputs)
@@ -107,26 +139,31 @@ def train_text(
         if steps >= training_config.max_steps:
             break
 
+    validation_loss = _evaluate(model, validation_loader, device)
     target = Path(output_dir)
     target.mkdir(parents=True, exist_ok=True)
     checkpoint = target / "vayron-small.pt"
-    torch.save({
+    checkpoint_payload = {
         "model_state_dict": model.state_dict(),
         "model_config": model.config_dict(),
         "tokenizer": tokenizer.to_dict(),
         "training_config": asdict(training_config),
         "steps": steps,
         "final_train_loss": losses[-1],
+        "validation_loss": validation_loss,
+        "data_provenance": {"source": source, "license_note": license_note},
         "model_origin": "Vayron initialized from random weights; trained only on supplied corpus",
-    }, checkpoint)
+    }
+    torch.save(checkpoint_payload, checkpoint)
     report = {
         "checkpoint": str(checkpoint),
         "steps": steps,
         "final_train_loss": losses[-1],
+        "validation_loss": validation_loss,
         "device": str(device),
         "trained_from_random_initialization": True,
-        "evaluation_loss": None,
-        "warning": "Smoke training only: no held-out validation split or quality claim.",
+        "data_provenance": checkpoint_payload["data_provenance"],
+        "warning": "Tiny smoke run only; validation on a small split does not establish model quality.",
     }
     (target / "training-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
