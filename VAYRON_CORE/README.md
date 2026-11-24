@@ -7,10 +7,12 @@ The independent, provider-agnostic software foundation of **Alili Vayron**.
 - **Core engine:** capability registry, deterministic bootstrap behavior, and local SQLite memory.
 - **18 specialist heads:** THINK_yzn, REASON_yzn, SEARCH_yzn, FLASH_yzn, LEARN_yzn, MEMORY_yzn, CODE_yzn, BUILD_yzn, VISION_yzn, VERIFY_yzn, EVOLVE_yzn, KNOW_yzn, SKILL_yzn, RESEARCH_yzn, SELFTEST_yzn, GUARD_yzn, TOOLMAKER_yzn, CODEAUDIT_yzn. These are routing profiles, not separate trained networks.
 - **Orchestration:** task planning, approval flags for sensitive operations, result-structure verification, and review-gated knowledge intake.
+- **Assistant composition:** VayronAssistant joins the head router, planner, verification report, and a registered local model runtime.
 - **Tokenizer:** Vayron-owned UTF-8 byte tokenizer, supporting Arabic, English, French and code without a pretrained vocabulary.
 - **Neural baseline:** a compact decoder-only causal Transformer implemented directly in PyTorch, initialized from random weights.
+- **Local inference:** TorchCheckpointAdapter loads a Vayron checkpoint and registers it with ModelRuntime without external APIs.
 - **Training pipeline:** deterministic seed, AdamW, gradient clipping, train/validation split, loss checks, checkpoint save/load, and source/license provenance fields.
-- **CI:** GitHub Actions test matrix for Python 3.11 and 3.12, including a tiny CPU training smoke test.
+- **CI:** GitHub Actions test matrix for Python 3.11 and 3.12, including a tiny CPU training and local checkpoint-inference smoke test.
 
 ## Install and test
 
@@ -19,7 +21,7 @@ Core only:
     python -m pip install -e ".[dev]"
     python -m pytest -q
 
-Neural training:
+Neural training and local inference:
 
     python -m pip install -e ".[dev,train]"
     python -m pytest -q
@@ -28,7 +30,7 @@ Tiny local training example (use only a corpus you are legally allowed to train 
 
     python scripts/train_smoke.py --data corpus.txt --source "your dataset identifier" --license "exact license or permission" --steps 20
 
-The smoke command creates artifacts/vayron-smoke/vayron-small.pt and a JSON report. It proves only that a small training loop can execute and save/reload a checkpoint.
+The smoke command creates artifacts/vayron-smoke/vayron-small.pt and a JSON report. Register that checkpoint using TorchCheckpointAdapter to run the small local model. This proves only that a small training and inference path executes; it does not establish model quality.
 
 ## Originality and interoperability
 
@@ -44,6 +46,7 @@ The core has no mandatory external AI API, paid service, API key, credit card, o
 - No large corpus has been supplied, no long pretraining run has occurred, and no capable production checkpoint exists yet.
 - The VISION_yzn head is a routing profile only; no image encoder is implemented.
 - Continuous unattended weight updates are disabled. Knowledge ingestion is reviewed and distinct from model training.
+- The assistant can only generate after a valid local checkpoint is registered; no trained checkpoint is bundled yet.
 
 A serious foundation model requires a much larger licensed corpus, robust tokenizer experiments, architecture ablations, scalable compute, long training runs, held-out benchmarks, safety evaluations, and hardware-specific inference optimization.
 
