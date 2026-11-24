@@ -9,12 +9,13 @@ from .verification import ResultVerifier, VerificationReport
 from .network import VayronNetwork, NetworkTrace
 from .learning import LearningJournal, LearningCandidate
 from .model_runtime import ModelRuntime, ModelDescriptor, LocalModelAdapter
+from .tokenizer import VayronByteTokenizer, TokenizerConfig
 
 __all__ = [
     "VayronEngine", "MemoryStore", "CapabilityRegistry", "Capability",
     "HeadRouter", "HeadSpec", "DEFAULT_HEADS", "TaskPlanner", "TaskPlan",
     "ResultVerifier", "VerificationReport", "VayronNetwork", "NetworkTrace",
     "LearningJournal", "LearningCandidate", "ModelRuntime", "ModelDescriptor",
-    "LocalModelAdapter",
+    "LocalModelAdapter", "VayronByteTokenizer", "TokenizerConfig",
 ]
-__version__ = "0.3.0"
+__version__ = "0.4.0"
