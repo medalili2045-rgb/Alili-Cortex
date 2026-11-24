@@ -9,6 +9,8 @@ from vayron_core.neural import VayronModelConfig
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True, help="UTF-8 text file you have rights to use")
+    parser.add_argument("--source", required=True, help="Dataset source identifier or URL")
+    parser.add_argument("--license", required=True, help="Exact license or documented permission")
     parser.add_argument("--output", default="artifacts/vayron-smoke")
     parser.add_argument("--steps", type=int, default=20)
     parser.add_argument("--sequence-length", type=int, default=64)
@@ -19,6 +21,8 @@ def main() -> None:
     report = train_text(
         text,
         args.output,
+        source=args.source,
+        license_note=args.license,
         model_config=VayronModelConfig(d_model=args.width, n_heads=4, n_layers=args.layers, max_seq_len=args.sequence_length),
         training_config=TrainingConfig(max_steps=args.steps, batch_size=2),
     )
