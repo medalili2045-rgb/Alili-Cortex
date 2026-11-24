@@ -27,8 +27,9 @@ def test_memory_roundtrip(tmp_path):
     assert results[0]["category"] == "project"
 
 
-def test_engine_reports_model_not_loaded():
+def test_engine_reports_foundation_not_full_assistant():
     status = VayronEngine().status()
     assert status["ready"] is True
+    assert status["assistant_ready"] is False
     assert status["model_loaded"] is False
     assert status["external_api_required"] is False
