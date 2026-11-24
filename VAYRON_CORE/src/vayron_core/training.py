@@ -105,6 +105,8 @@ def train_text(
         torch.cuda.manual_seed_all(training_config.seed)
 
     tokenizer = VayronByteTokenizer()
+    if model_config.vocab_size != tokenizer.vocab_size:
+        raise ValueError("Model vocab_size must match the active Vayron tokenizer")
     tokens = tokenizer.encode(text)
     block_size = model_config.max_seq_len
     split = int(len(tokens) * (1.0 - training_config.validation_fraction))
@@ -190,6 +192,8 @@ def load_checkpoint_bundle(path: str | Path, *, device: str = "cpu") -> tuple[Va
         raise ValueError("Checkpoint is missing model configuration or weights")
     try:
         config = VayronModelConfig(**config_data)
+        if config.vocab_size != VayronByteTokenizer().vocab_size:
+            raise ValueError("Checkpoint model vocab_size does not match the active Vayron tokenizer")
         model = VayronLanguageModel(config)
         model.load_state_dict(state_dict, strict=True)
     except (TypeError, ValueError, RuntimeError) as exc:
