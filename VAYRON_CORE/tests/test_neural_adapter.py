@@ -56,3 +56,15 @@ def test_adapter_rejects_unbounded_generation_request(tmp_path):
     adapter = TorchCheckpointAdapter(_train_checkpoint(tmp_path))
     with pytest.raises(ValueError, match="between 1 and 2048"):
         adapter.generate("Vayron", max_new_tokens=2049)
+
+
+def test_training_rejects_tokenizer_vocabulary_mismatch(tmp_path):
+    with pytest.raises(ValueError, match="vocab_size"):
+        train_text(
+            "A tiny original Vayron training corpus. " * 100,
+            tmp_path,
+            source="test-data",
+            license_note="CC0 test data",
+            model_config=VayronModelConfig(vocab_size=300, d_model=32, n_heads=4, n_layers=1, max_seq_len=16, dropout=0.0),
+            training_config=TrainingConfig(batch_size=2, max_steps=1, device="cpu"),
+        )
