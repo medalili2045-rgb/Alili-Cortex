@@ -73,6 +73,14 @@ def _content_hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _file_hash(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def ingest_text_jsonl(
     input_path: str | Path,
     output_dir: str | Path,
@@ -99,10 +107,25 @@ def ingest_text_jsonl(
     db_path = destination / "dedupe.sqlite3"
     db = sqlite3.connect(db_path)
     db.execute("CREATE TABLE IF NOT EXISTS seen (digest TEXT PRIMARY KEY)")
-    db.commit()
-
+    # Rebuild the compact index from committed shards. This recovers if a
+    # process stopped after a shard rename but before its SQLite commit.
+    db.execute("DELETE FROM seen")
     shard_paths = sorted(destination.glob("text-*.jsonl"))
-    shard_index = len(shard_paths)
+    for existing_shard in shard_paths:
+        with existing_shard.open("r", encoding="utf-8") as existing_stream:
+            for existing_line in existing_stream:
+                if not existing_line.strip():
+                    continue
+                existing_record = json.loads(existing_line)
+                digest = existing_record.get("content_sha256")
+                if isinstance(digest, str) and len(digest) == 64:
+                    db.execute("INSERT OR IGNORE INTO seen(digest) VALUES (?)", (digest,))
+    db.commit()
+    for stale_tmp in destination.glob(".text-*.tmp"):
+        stale_tmp.unlink(missing_ok=True)
+    shard_index = max(
+        (int(path.stem.split("-")[-1]) for path in shard_paths), default=-1
+    ) + 1
     shard_count = 0
     accepted = rejected = duplicates = 0
     output_stream = None
@@ -127,6 +150,7 @@ def ingest_text_jsonl(
         output_stream = None
         if current_tmp.stat().st_size:
             os.replace(current_tmp, current_final)
+            db.commit()
             written_shards.append(current_final.name)
             shard_index += 1
         else:
@@ -173,8 +197,6 @@ def ingest_text_jsonl(
             accepted += 1
             if shard_count >= config.shard_records:
                 close_shard()
-            if accepted % 1000 == 0:
-                db.commit()
         close_shard()
         db.commit()
     except Exception:
@@ -199,7 +221,7 @@ def ingest_text_jsonl(
             {
                 "path": item.name,
                 "bytes": item.stat().st_size,
-                "sha256": hashlib.sha256(item.read_bytes()).hexdigest(),
+                "sha256": _file_hash(item),
             }
             for item in all_shards
         ],
