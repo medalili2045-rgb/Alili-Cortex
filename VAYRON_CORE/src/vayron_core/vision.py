@@ -62,13 +62,13 @@ class Siglip2VisionAdapter(nn.Module):
     ) -> None:
         super().__init__()
         try:
-            from transformers import AutoModel, AutoProcessor
+            from transformers import AutoImageProcessor, AutoModel
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise ImportError(
                 "Install vision dependencies with: pip install -e '.[vision]'"
             ) from exc
 
-        self.processor = AutoProcessor.from_pretrained(
+        self.processor = AutoImageProcessor.from_pretrained(
             model_id, local_files_only=local_files_only
         )
         loaded = AutoModel.from_pretrained(
@@ -99,7 +99,13 @@ class Siglip2VisionAdapter(nn.Module):
         if not images:
             raise ValueError("images cannot be empty")
         batch = self.processor(images=list(images), return_tensors="pt")
-        pixel_values = batch["pixel_values"].to(self.device_name)
+        vision_inputs = {
+            key: value.to(self.device_name)
+            for key, value in batch.items()
+            if key in {"pixel_values", "pixel_attention_mask", "spatial_shapes"}
+        }
+        if "pixel_values" not in vision_inputs:
+            raise RuntimeError("Image processor did not return pixel_values")
         with torch.no_grad():
-            features = self.encoder(pixel_values=pixel_values).last_hidden_state
+            features = self.encoder(**vision_inputs).last_hidden_state
         return self.projector(features)
