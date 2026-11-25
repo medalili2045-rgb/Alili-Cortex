@@ -84,6 +84,10 @@ def process_image(
             target = output / f"{source.stem}-{_sha256(source)[:12]}.jpg"
             image.save(target, format="JPEG", quality=90, optimize=True)
             width, height = image.size
+    except Image.DecompressionBombError as exc:
+        raise ValueError("image exceeds max_image_pixels") from exc
+    except Image.DecompressionBombWarning as exc:
+        raise ValueError("image exceeds max_image_pixels") from exc
     except Exception as exc:
         if isinstance(exc, (ValueError, RuntimeError)):
             raise
