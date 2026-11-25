@@ -292,7 +292,7 @@ def train_text(
         global_step=global_step, epoch=start_epoch, batch_cursor=batch_cursor,
         permutation=permutation, generator=generator,
         best_validation_loss=best_validation_loss, source=source.strip(),
-        license_note=license_note.strip(),
+        license_note=license_note.strip(), corpus_sha256=corpus_sha256,
     )
     _atomic_save(final_payload, latest_path)
     _atomic_save(final_payload, target / "vayron-small.pt")
