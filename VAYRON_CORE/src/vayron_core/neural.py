@@ -120,6 +120,38 @@ class VayronLanguageModel(nn.Module):
             x = block(x)
         return self.output(self.final_norm(x))
 
+    def forward_multimodal(
+        self, input_ids: torch.Tensor, image_embeddings: torch.Tensor
+    ) -> torch.Tensor:
+        """Run image-prefix plus text tokens; return logits for text positions only."""
+        if not isinstance(input_ids, torch.Tensor) or input_ids.ndim != 2:
+            raise ValueError("input_ids must be a tensor with shape [batch, sequence]")
+        if input_ids.dtype != torch.long:
+            raise TypeError("input_ids must use torch.long token IDs")
+        if input_ids.shape[0] == 0 or input_ids.shape[1] == 0:
+            raise ValueError("input_ids batch and sequence dimensions cannot be empty")
+        if torch.any(input_ids < 0) or torch.any(input_ids >= self.config.vocab_size):
+            raise ValueError("input token ID is outside the configured vocabulary")
+        if not isinstance(image_embeddings, torch.Tensor) or image_embeddings.ndim != 3:
+            raise ValueError("image_embeddings must have shape [batch, patches, d_model]")
+        if image_embeddings.shape[0] != input_ids.shape[0]:
+            raise ValueError("image and text batch sizes must match")
+        if image_embeddings.shape[1] < 1 or image_embeddings.shape[2] != self.config.d_model:
+            raise ValueError("image_embeddings must contain patches with d_model width")
+        if image_embeddings.device != input_ids.device:
+            raise ValueError("image_embeddings and input_ids must be on the same device")
+        total_length = image_embeddings.shape[1] + input_ids.shape[1]
+        if total_length > self.config.max_seq_len:
+            raise ValueError("combined image and text sequence exceeds max_seq_len")
+
+        text = self.token_embedding(input_ids)
+        x = torch.cat((image_embeddings, text), dim=1)
+        positions = torch.arange(total_length, device=input_ids.device)
+        x = x + self.position_embedding(positions)[None, :, :]
+        for block in self.blocks:
+            x = block(x)
+        return self.output(self.final_norm(x[:, image_embeddings.shape[1]:]))
+
     def config_dict(self) -> dict:
         return asdict(self.config)
 
