@@ -1,6 +1,7 @@
 """Resumable, provenance-aware causal language-model training for Vayron."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import random
@@ -30,7 +31,7 @@ class TrainingConfig:
     device: str = "auto"
     validation_fraction: float = 0.1
     gradient_accumulation_steps: int = 1
-    checkpoint_every_steps: int = 25
+    checkpoint_every_steps: int = 10
     warmup_steps: int = 0
     min_learning_rate_ratio: float = 0.1
 
@@ -70,7 +71,7 @@ def _atomic_save(payload: dict[str, Any], path: Path) -> None:
 def _make_payload(
     model, optimizer, scheduler, config, model_config, tokenizer,
     *, global_step, epoch, batch_cursor, permutation, generator,
-    best_validation_loss, source, license_note,
+    best_validation_loss, source, license_note, corpus_sha256,
 ):
     return {
         "format_version": CHECKPOINT_FORMAT_VERSION,
@@ -89,6 +90,7 @@ def _make_payload(
         "cuda_rng_state_all": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
         "best_validation_loss": best_validation_loss,
         "data_provenance": {"source": source, "license_note": license_note},
+        "corpus_sha256": corpus_sha256,
         "model_origin": "Vayron model initialized from random weights; no external model weights imported.",
     }
 
@@ -144,6 +146,7 @@ def train_text(
     tokenizer = VayronByteTokenizer()
     if model_config.vocab_size != tokenizer.vocab_size:
         raise ValueError("Model vocab_size must match the active Vayron tokenizer")
+    corpus_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
     tokens = tokenizer.encode(text)
     block_size = model_config.max_seq_len
     split = int(len(tokens) * (1.0 - training_config.validation_fraction))
@@ -193,6 +196,16 @@ def train_text(
         provenance = saved.get("data_provenance", {})
         if provenance.get("source") != source or provenance.get("license_note") != license_note:
             raise ValueError("Resume corpus provenance must match the original run")
+        if saved.get("corpus_sha256") != corpus_sha256:
+            raise ValueError("Resume corpus content differs from the original training run")
+        previous_config = saved.get("training_config", {})
+        stable_fields = (
+            "batch_size", "learning_rate", "seed", "validation_fraction",
+            "gradient_accumulation_steps", "warmup_steps", "min_learning_rate_ratio",
+        )
+        for field in stable_fields:
+            if previous_config.get(field) != getattr(training_config, field):
+                raise ValueError(f"Resume training setting changed: {field}")
         model.load_state_dict(saved["model_state_dict"], strict=True)
         optimizer.load_state_dict(saved["optimizer_state_dict"])
         scheduler.load_state_dict(saved["scheduler_state_dict"])
@@ -258,7 +271,7 @@ def train_text(
                 global_step=global_step, epoch=start_epoch, batch_cursor=batch_cursor,
                 permutation=permutation, generator=generator,
                 best_validation_loss=best_validation_loss, source=source.strip(),
-                license_note=license_note.strip(),
+                license_note=license_note.strip(), corpus_sha256=corpus_sha256,
             )
             _atomic_save(payload, latest_path)
 
@@ -270,7 +283,7 @@ def train_text(
             global_step=global_step, epoch=start_epoch, batch_cursor=batch_cursor,
             permutation=permutation, generator=generator,
             best_validation_loss=best_validation_loss, source=source.strip(),
-            license_note=license_note.strip(),
+            license_note=license_note.strip(), corpus_sha256=corpus_sha256,
         )
         _atomic_save(final_payload, target / "best-validation.pt")
 
