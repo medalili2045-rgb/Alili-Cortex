@@ -62,3 +62,39 @@ Use free-access sources and free compute only. No credit card, paid API, subscri
 - License audit: not completed.
 - Streaming/sharded trainer: not implemented yet.
 - Model pretraining on large corpora: not started.
+
+## Multimodal data: images and video are first-class
+
+Vayron's data program must not be text-only. Images and videos are part of the target training and evaluation scope, alongside text. They must have their own ingestion pipeline and provenance records; they must not be forced through the current text-only `train_text` path.
+
+### Images
+- Image-text pairs: captions, descriptions, visual question answering, OCR/document understanding, charts, diagrams, scientific figures, and object/scene descriptions.
+- Image-only material may be used only where the source license and intended training use permit it; preserve annotations and source metadata.
+- Preprocessing: verify file type, decode safely, reject corrupt files, normalize orientation, record dimensions, detect duplicates and near-duplicates, and create controlled-resolution derivatives.
+- Filter personal/private images, exposed personal data, sensitive documents, non-consensual intimate imagery, and unsafe or disallowed content. Apply appropriate safeguards to faces and biometric data.
+- Keep the original asset reference and checksum; store derived crops/resizes as reproducible transformations, not replacements for provenance.
+
+### Video
+- Video-text pairs: licensed clips with captions, subtitles, transcripts, scene descriptions, instructional steps, and temporal question-answer annotations.
+- Process videos as time-based sequences: validate codecs and duration, sample frames at documented intervals or scene boundaries, retain timestamps, and preserve audio/subtitle alignment when separately licensed.
+- Deduplicate both complete videos and sampled frames. Avoid treating repeated adjacent frames as independent examples.
+- Store clip-level and frame-level provenance, license, timestamps, transformations, and source identifiers. A frame extracted from a video inherits the relevant source rights; extraction does not make it public domain.
+- Do not ingest streaming-platform videos or scraped social-media clips merely because they are publicly viewable. Require an explicit compatible license or documented permission.
+
+### Multimodal architecture required
+1. Separate image and video manifests with per-asset license/provenance checks and checksums.
+2. A safe, bounded-memory media downloader and decoder; no unbounded downloads into Colab.
+3. Image preprocessing and video frame/scene sampling pipelines with reproducible configs.
+4. Aligned examples that connect media assets to captions, questions, answers, timestamps, and text context.
+5. A vision encoder and a temporal video pathway, plus a tested connector into the language model. The current small text-only model does not yet provide these capabilities.
+6. Separate image, video, OCR, visual QA, and temporal understanding evaluation suites.
+7. A staged training plan: validate data and encoders on small permitted samples first, then scale only with adequate compute and storage.
+
+### Multimodal source discovery policy
+Discover image and video datasets broadly, including scientific, educational, public-domain, government, cultural-heritage, and openly licensed repositories. Approve each dataset only after checking its actual license, asset-level restrictions where available, attribution obligations, privacy/safety constraints, download terms, and whether model training is permitted. Dataset names or public URLs alone are not approval.
+
+## Updated current status
+- Image/video source audit: not started.
+- Image/video downloads: not started.
+- Vision encoder and video pathway: not implemented.
+- Multimodal training: not started.
