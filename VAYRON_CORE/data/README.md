@@ -94,7 +94,10 @@ Vayron's data program must not be text-only. Images and videos are part of the t
 Discover image and video datasets broadly, including scientific, educational, public-domain, government, cultural-heritage, and openly licensed repositories. Approve each dataset only after checking its actual license, asset-level restrictions where available, attribution obligations, privacy/safety constraints, download terms, and whether model training is permitted. Dataset names or public URLs alone are not approval.
 
 ## Updated current status
+- Text JSONL / JSONL.GZ ingestion: implemented as a bounded-memory streaming utility with explicit license allow-list, provenance fields, exact-content deduplication, resumable shard output, and SHA-256 manifests.
+- Image/video metadata manifest validation: implemented; requires explicit source, asset path, media type, and approved license. It does not download or decode assets.
 - Image/video source audit: not started.
-- Image/video downloads: not started.
-- Vision encoder and video pathway: not implemented.
+- Image/video downloads and safe decoding: not started.
+- Vision encoder and temporal video pathway: not implemented.
 - Multimodal training: not started.
+- Automated tests for the new ingestion utilities are added; they still need to be run in the user's Colab environment before treating this stage as verified.
