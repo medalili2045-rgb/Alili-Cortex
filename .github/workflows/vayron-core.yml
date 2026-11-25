@@ -1,0 +1,40 @@
+name: Vayron Core Tests
+
+on:
+  pull_request:
+    paths:
+      - "VAYRON_CORE/**"
+      - ".github/workflows/vayron-core.yml"
+
+concurrency:
+  group: vayron-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: VAYRON_CORE/pyproject.toml
+      - name: Install CPU PyTorch
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install Vayron package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+        working-directory: VAYRON_CORE
+      - name: Run full test suite including neural smoke training
+        run: python -m pytest -q
+        working-directory: VAYRON_CORE
